@@ -1,210 +1,7 @@
-// The Swift Programming Language
-// https://docs.swift.org/swift-book
-
 import ArgumentParser
 import Foundation
 import Logging
 import NIO
-
-@main
-struct swiftGopher: ParsableCommand {
-  @Option var gopherHostName: String = "localhost"
-  @Option var port: Int = 8080
-  @Option var gopherDataDir: String = "./example-gopherdata"
-  @Option var host: String = "0.0.0.0"
-
-  public mutating func run() throws {
-    let eventLoopGroup = MultiThreadedEventLoopGroup(
-      numberOfThreads: System.coreCount
-    )
-
-    defer {
-      try! eventLoopGroup.syncShutdownGracefully()
-    }
-
-    let localGopherDataDir = gopherDataDir
-    let localGopherHostName = gopherHostName
-    let localPort = port
-
-    let logger = Logger(label: "com.navanchauhan.gopher.server")
-
-    let serverBootstrap = ServerBootstrap(
-      group: eventLoopGroup
-    )
-    .serverChannelOption(
-      ChannelOptions.backlog,
-      value: 256
-    )
-    .serverChannelOption(
-      ChannelOptions.socketOption(
-        .so_reuseaddr
-      ),
-      value: 1
-    )
-    .childChannelInitializer { channel in
-      channel.pipeline.addHandlers([
-        BackPressureHandler(),
-        GopherHandler(
-             logger: logger,
-          gopherdata_dir: localGopherDataDir,
-          gopherdata_host: localGopherHostName,
-          gopherdata_port: localPort
-        ),
-      ])
-    }
-    .childChannelOption(
-      ChannelOptions.socketOption(
-        .so_reuseaddr
-      ),
-      value: 1
-    )
-    .childChannelOption(
-      ChannelOptions.maxMessagesPerRead,
-      value: 16
-    )
-    .childChannelOption(
-      ChannelOptions.recvAllocator,
-      value: AdaptiveRecvByteBufferAllocator()
-    )
-
-    let defaultHost = host
-    let defaultPort = port
-
-    let channel = try serverBootstrap.bind(
-      host: defaultHost,
-      port: defaultPort
-    ).wait()
-
-    logger.info("Server started and listening on \(channel.localAddress!)")
-    try channel.closeFuture.wait()
-    logger.info("Server closed")
-  }
-}
-
-enum ResponseType {
-  case string(String)
-  case data(Data)
-}
-
-enum gopherFileType {
-  case text
-  case directory
-  case nameserver
-  case error
-  case binhex
-  case bindos
-  case uuencoded
-  case indexSearch
-  case telnet
-  case binary
-  case redundantServer
-  case tn3270Session
-  case gif
-  case image
-  case bitmap
-  case movie
-  case sound
-  case doc
-  case html
-  case message
-  case png
-  case rtf
-  case wavfile
-  case pdf
-  case xml
-}
-
-func getFileType(fileExtension: String) -> gopherFileType {
-  switch fileExtension {
-  case "txt":
-    return .text
-  case "md":
-    return .text
-  case "html":
-    return .html
-  case "pdf":
-    return .pdf
-  case "png":
-    return .png
-  case "gif":
-    return .gif
-  case "jpg":
-    return .image
-  case "jpeg":
-    return .image
-  case "mp3":
-    return .sound
-  case "wav":
-    return .wavfile
-  case "mp4":
-    return .movie
-  case "mov":
-    return .movie
-  case "avi":
-    return .movie
-  case "rtf":
-    return .rtf
-  case "xml":
-    return .xml
-  default:
-    return .binary
-  }
-}
-
-func fileTypeToGopherItem(fileType: gopherFileType) -> String {
-  switch fileType {
-  case .text:
-    return "0"
-  case .directory:
-    return "1"
-  case .nameserver:
-    return "2"
-  case .error:
-    return "3"
-  case .binhex:
-    return "4"
-  case .bindos:
-    return "5"
-  case .uuencoded:
-    return "6"
-  case .indexSearch:
-    return "7"
-  case .telnet:
-    return "8"
-  case .binary:
-    return "9"
-  case .redundantServer:
-    return "+"
-  case .tn3270Session:
-    return "T"
-  case .gif:
-    return "g"
-  case .image:
-    return "I"
-  case .bitmap:
-    return "b"
-  case .movie:
-    return "M"
-  case .sound:
-    return "s"
-  case .doc:
-    return "d"
-  case .html:
-    return "h"
-  case .message:
-    return "i"
-  case .png:
-    return "p"
-  case .rtf:
-    return "t"
-  case .wavfile:
-    return "w"
-  case .pdf:
-    return "P"
-  case .xml:
-    return "x"
-  }
-}
 
 final class GopherHandler: ChannelInboundHandler {
   typealias InboundIn = ByteBuffer
@@ -214,16 +11,21 @@ final class GopherHandler: ChannelInboundHandler {
   let gopherdata_host: String
   let gopherdata_port: Int
   let logger: Logger
+  let enableSearch: Bool
+  let disableGophermap: Bool
 
   init(
     logger: Logger,
     gopherdata_dir: String = "./example-gopherdata", gopherdata_host: String = "localhost",
-    gopherdata_port: Int = 70
+    gopherdata_port: Int = 70, enableSearch: Bool = false,
+    disableGophermap: Bool = false
   ) {
     self.gopherdata_dir = gopherdata_dir
     self.gopherdata_host = gopherdata_host
     self.gopherdata_port = gopherdata_port
     self.logger = logger
+    self.enableSearch = enableSearch
+    self.disableGophermap = disableGophermap
   }
 
   func channelRead(context: ChannelHandlerContext, data: NIOAny) {
@@ -234,11 +36,10 @@ final class GopherHandler: ChannelInboundHandler {
     }
 
     if let remoteAddress = context.remoteAddress {
-        logger.info("Received request from \(remoteAddress) for \(requestString)")
+        logger.info("Received request from \(remoteAddress) for '\(requestString.replacingOccurrences(of: "\r\n", with: "<GopherSequence>").replacingOccurrences(of: "\n", with: "<Linebreak>"))'")
     } else {
         logger.warning("Unable to retrieve remote address")
     }
-
 
     let response = processGopherRequest(requestString)
 
@@ -257,6 +58,8 @@ final class GopherHandler: ChannelInboundHandler {
   }
 
   func requestHandler(path: URL) -> ResponseType {
+    logger.info("Handling request for '\(path.path)'")
+
     // Check if path is a directory or a file
     let fm = FileManager.default
     var isDir: ObjCBool = false
@@ -303,20 +106,66 @@ final class GopherHandler: ChannelInboundHandler {
     if base_dir.path.hasSuffix("/") && sanitizedPath.hasPrefix("/") {
       sanitizedPath = String(sanitizedPath.dropFirst())
     }
+
+    // Now check if there is still a prefix
+    if sanitizedPath.hasPrefix("/") {
+        sanitizedPath = String(sanitizedPath.dropFirst())
+    }
+
     let full_path = base_dir.appendingPathComponent(sanitizedPath)
     return full_path
+  }
+
+  func generateGopherItem(
+    item_name: String, item_path: URL, item_host: String? = nil, item_port: String? = nil
+  ) -> String {
+    let myItemHost = item_host ?? gopherdata_host
+    let myItemPort = item_port ?? String(gopherdata_port)
+    let base_path = URL(fileURLWithPath: gopherdata_dir)
+    var relative_path = item_path.path.replacingOccurrences(of: base_path.path, with: "")
+    if !relative_path.hasPrefix("/") {
+      relative_path = "/\(relative_path)"
+    }
+    return "\(item_name)\t\(relative_path)\t\(myItemHost)\t\(myItemPort)\r\n"
+  }
+
+  func generateGopherMap(path: URL) -> [String] {
+    var items: [String] = []
+
+    var basePath = URL(fileURLWithPath: gopherdata_dir).path
+    if basePath.hasSuffix("/") {
+        basePath = String(basePath.dropLast())
+    }
+
+    let fm = FileManager.default
+    do {
+        print("Reading directory: \(path.path)")
+        let itemsInDirectory = try fm.contentsOfDirectory(at: path, includingPropertiesForKeys: nil)
+        for item in itemsInDirectory {
+            let isDirectory = try item.resourceValues(forKeys: [.isDirectoryKey]).isDirectory ?? false
+            let name = item.lastPathComponent
+            if isDirectory {
+                items.append(generateGopherItem(item_name: "1\(name)", item_path: item))
+            } else {
+                let fileType = getFileType(fileExtension: item.pathExtension)
+                let gopherFileType = fileTypeToGopherItem(fileType: fileType)
+                items.append(generateGopherItem(item_name: "\(gopherFileType)\(name)", item_path: item))
+            }
+        }
+    } catch {
+        print("Error reading directory: \(path.path)")
+    }
+    return items
   }
 
   func prepareGopherMenu(path: URL = URL(string: "/")!) -> String {
     var gopherResponse: [String] = []
 
     let fm = FileManager.default
-    let absolute_base_path = URL(fileURLWithPath: gopherdata_dir)
-    let relative_path = path.path.replacingOccurrences(of: absolute_base_path.path, with: "")
 
     do {
       let gophermap_path = path.appendingPathComponent("gophermap")
-      if fm.fileExists(atPath: gophermap_path.path) {
+      if fm.fileExists(atPath: gophermap_path.path) && !disableGophermap {
         let gophermap_contents = try String(contentsOfFile: gophermap_path.path, encoding: .utf8)
         let gophermap_lines = gophermap_contents.components(separatedBy: "\n")
         for originalLine in gophermap_lines {
@@ -367,24 +216,8 @@ final class GopherHandler: ChannelInboundHandler {
           }
         }
       } else {
-        let items = try fm.contentsOfDirectory(at: path, includingPropertiesForKeys: nil)
-
-        for item in items {
-          let item_name = item.lastPathComponent
-          var item_type = ""
-          if try item.resourceValues(forKeys: [.isDirectoryKey]).isDirectory ?? false {
-            item_type = "1"
-          } else {
-            let fileType = getFileType(fileExtension: item.pathExtension)
-            item_type = fileTypeToGopherItem(fileType: fileType)
-          }
-          let item_path = "\(relative_path)\(relative_path.hasSuffix("/") ? "" : "/")\(item_name)"
-            .replacingOccurrences(of: "//", with: "/")
-          let item_host = gopherdata_host
-          let item_port = gopherdata_port
-          let item_line = "\(item_type)\(item_name)\t\(item_path)\t\(item_host)\t\(item_port)\r\n"
-          gopherResponse.append(item_line)
-        }
+        print("No gophermap found for \(path.path)")
+        gopherResponse = generateGopherMap(path: path)
       }
     } catch {
       logger.error("Error reading directory: \(path.path)")
@@ -392,12 +225,16 @@ final class GopherHandler: ChannelInboundHandler {
     }
 
     // Append Search
-    let search_line = "7Search Server\t/swiftSearch\t\(gopherdata_host)\t\(gopherdata_port)\r\n"
-    gopherResponse.append(search_line)
+    if enableSearch {
+        let search_line = "7Search Server\t/search\t\(gopherdata_host)\t\(gopherdata_port)\r\n"
+        gopherResponse.append(search_line)
+    }
+    
 
     return gopherResponse.joined(separator: "")
   }
 
+    // TODO: Refactor
   func performSearch(query: String) -> String {
     // Really basic search implementation
 
@@ -480,26 +317,34 @@ final class GopherHandler: ChannelInboundHandler {
     context.close(promise: nil)
   }
 
-  private func processGopherRequest(_ request: String) -> ResponseType {
-    // Implement your logic to handle the Gopher request and return a response
-    // For example, you can retrieve a document based on the request string
-    // Return the document or an appropriate response as a string
+  private func processGopherRequest(_ originalRequest: String) -> ResponseType {
+    var request = originalRequest
 
-    // Example response (you should replace this with actual logic)
-    if request == "\r\n" {
-      return .string(prepareGopherMenu(path: preparePath()))
-    } else if !request.contains("\t") {
-      //TODO: Potential Bug in Gopher implementation? curl gopher://localhost:8080/new_folder/ does not work but curl gopher://localhost:8080//new_folder/ works (tested with gopher://gopher.meulie.net//EFFector/ as well)
-      return requestHandler(path: preparePath(path: request))
-    } else if request.contains("\t") {
-      var searchQuery = request.components(separatedBy: "\t")[1]
-      searchQuery = searchQuery.replacingOccurrences(of: "\r\n", with: "")
-      return .string(performSearch(query: searchQuery.lowercased()))
+    // Fix for "Gopher" (iOS) client sending an extra \n
+    if request.hasSuffix("\n\n") {
+        request = String(request.dropLast())
     }
 
-    return
-      .string(
-        "Hello from Gopher Server! You requested: \(request), but this request could not be processed.\r\n"
-      )
+    if request == "\r\n" { // Empty request
+      return .string(prepareGopherMenu(path: preparePath()))
+    }
+
+    // Again, fix for the iOS client. Might as well make my own client
+    if request.hasSuffix("\n") {
+        request = String(request.dropLast())
+    }
+
+    if request.contains("\t") {
+        if enableSearch {
+            var searchQuery = request.components(separatedBy: "\t")[1]
+            searchQuery = searchQuery.replacingOccurrences(of: "\r\n", with: "")
+            return .string(performSearch(query: searchQuery.lowercased()))
+        } else {
+            return .string("3Search is disabled on this server.\r\n")
+        }
+    }
+    
+    //TODO: Potential Bug in Gopher implementation? curl gopher://localhost:8080/new_folder/ does not work but curl gopher://localhost:8080//new_folder/ works (tested with gopher://gopher.meulie.net//EFFector/ as well)
+    return requestHandler(path: preparePath(path: request))
   }
 }
