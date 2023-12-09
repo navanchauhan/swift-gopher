@@ -229,6 +229,9 @@ final class GopherHandler: ChannelInboundHandler {
         let search_line = "7Search Server\t/search\t\(gopherdata_host)\t\(gopherdata_port)\r\n"
         gopherResponse.append(search_line)
     }
+
+    // Append Server Info
+    gopherResponse.append(buildVersionStringResponse())
     
 
     return gopherResponse.joined(separator: "")
@@ -286,7 +289,7 @@ final class GopherHandler: ChannelInboundHandler {
     if gopherResponse.count == 0 {
       gopherResponse.append("iNo results found for the query \(query)\r\n")
     }
-
+    gopherResponse.append(buildVersionStringResponse())
     return gopherResponse.joined(separator: "")
 
   }
