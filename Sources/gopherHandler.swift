@@ -94,7 +94,7 @@ final class GopherHandler: ChannelInboundHandler {
 
       }
     } else {
-      logger.error("Error reading directory: \(path.path) Error: \(error)")
+      logger.error("Error reading directory: \(path.path) Directory does not exist.")
       return .string("3Error reading file...\terror.host\t1\r\n")
     }
 
