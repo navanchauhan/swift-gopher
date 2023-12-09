@@ -176,7 +176,7 @@ final class GopherHandler: ChannelInboundHandler {
               line = String(line.dropLast())
             }
             if line.prefix(1) == "i" {
-              gopherResponse.append("\(line)\r\n")
+              gopherResponse.append("\(line)\terror.host\t1\r\n")
                 continue
             }
 
@@ -212,7 +212,7 @@ final class GopherHandler: ChannelInboundHandler {
             gopherResponse.append(item_line)
           } else {
             line = line.replacingOccurrences(of: "\n", with: "")
-            gopherResponse.append("i\(line)\r\n")
+            gopherResponse.append("i\(line)\terror.host\t1\r\n")
           }
         }
       } else {
