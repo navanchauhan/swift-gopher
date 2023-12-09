@@ -78,7 +78,7 @@ final class GopherHandler: ChannelInboundHandler {
 
             return .string(fileContents)
           } catch {
-            logger.error("Error reading file: \(path.path)")
+            logger.error("Error reading file: \(path.path) Error: \(error)")
             return .string("3Error reading file...\terror.host\t1\r\n")
           }
         } else {
@@ -87,14 +87,14 @@ final class GopherHandler: ChannelInboundHandler {
             let fileContents = try Data(contentsOf: path)
             return .data(fileContents)
           } catch {
-            logger.error("Error reading file: \(path.path)")
+            logger.error("Error reading binary file: \(path.path) Error: \(error)")
             return .string("3Error reading file...\terror.host\t1\r\n")
           }
         }
 
       }
     } else {
-      logger.error("Error reading file: \(path.path)")
+      logger.error("Error reading directory: \(path.path) Error: \(error)")
       return .string("3Error reading file...\terror.host\t1\r\n")
     }
 
