@@ -8,12 +8,18 @@ import NIO
 
 @main
 struct swiftGopher: ParsableCommand {
-  @Option var gopherHostName: String = "localhost"
-  @Option var port: Int = 8080
-  @Option var gopherDataDir: String = "./example-gopherdata"
-  @Option var host: String = "0.0.0.0"
-  @Flag var disableSearch: Bool = false
-  @Flag var disableGophermap: Bool = false
+  @Option(name: [.short, .long], help: "Hostname used for generating selectors")
+  var gopherHostName: String = "localhost"
+  @Option(name: [.short, .long])
+  var host: String = "0.0.0.0"
+  @Option(name: [.short, .long])
+  var port: Int = 8080
+  @Option(name: [.customShort("d"), .long], help: "Data directory to map")
+  var gopherDataDir: String = "./example-gopherdata"
+  @Flag(help: "Disable full-text search feature") 
+  var disableSearch: Bool = false
+  @Flag(help: "Disable reading gophermap files to override automatic generation")
+  var disableGophermap: Bool = false
 
   public mutating func run() throws {
     let eventLoopGroup = MultiThreadedEventLoopGroup(
