@@ -20,7 +20,7 @@
    `"Y88888P"   `"YbbdP"'  88`YbbdP"'  88       88  `"Ybbd8"' 88          
                            88                                             
                            88                                             
-i Welcome to your Gopherspace!
+iWelcome to your Gopherspace!
 1example    /example    localhost    8080
 0hello_world.txt       /hello_world.txt  localhost   8080        
 1Other Gopher servers in the world (via Floodgap)     /world      gopher.floodgap.com     70
