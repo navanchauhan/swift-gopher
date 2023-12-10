@@ -104,3 +104,9 @@ Although, `swift-gopher` does not currently have a native HTTP handler, you can 
 - [ ] Support Gemini Protocol
 - [ ] Add a client library
 - [ ] Add native HTTP handler
+
+## Generating Docs
+
+```bash
+swift package --allow-writing-to-directory docs generate-documentation --transform-for-static-hosting --target swift-gopher --output-path docs --hosting-base-path swift-gopher
+```
