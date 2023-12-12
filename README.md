@@ -104,6 +104,7 @@ Although, `swift-gopher` does not currently have a native HTTP handler, you can 
 - [ ] Support Gemini Protocol
 - [ ] Add a client library
 - [ ] Add native HTTP handler
+- [ ] Guestbook
 
 ## Generating Docs
 
