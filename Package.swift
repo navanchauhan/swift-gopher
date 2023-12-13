@@ -6,11 +6,7 @@ import PackageDescription
 let package = Package(
   name: "swiftGopher",
   products: [
-    .library(
-        name: "swiftGopher",
-        targets: ["swiftGopherClient"]
-    ),
-    .library(name: "swiftGopherClient", targets: ["swiftGopherClient"]),
+    .library(name: "SwiftGopherClient", targets: ["swiftGopherClient"])
   ],
   dependencies: [
     .package(
