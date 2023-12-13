@@ -4,7 +4,13 @@
 import PackageDescription
 
 let package = Package(
-  name: "swift-gopher",
+  name: "swiftGopher",
+  products: [
+    .library(
+        name: "swiftGopher",
+        targets: ["swiftGopherClient"]
+    )
+  ],
   dependencies: [
     .package(
       url: "https://github.com/apple/swift-nio",
