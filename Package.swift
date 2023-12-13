@@ -33,6 +33,10 @@ let package = Package(
         dependencies: [
             .product(name: "NIO", package: "swift-nio")
         ]
+    ),
+    .testTarget(
+        name: "swiftGopherClientTests",
+        dependencies: ["swiftGopherClient"]
     )
   ]
 )
