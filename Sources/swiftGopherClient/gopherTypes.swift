@@ -41,7 +41,7 @@ import Foundation
  X    document xml file "eXtensive Markup Language" )
  */
 
-enum gopherItemType {
+public enum gopherItemType {
     case text
     case directory
     case nameserver

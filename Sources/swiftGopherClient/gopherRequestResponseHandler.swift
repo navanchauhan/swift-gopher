@@ -14,9 +14,9 @@ final class GopherRequestResponseHandler: ChannelInboundHandler {
 
     private var accumulatedData: ByteBuffer
     private let message: String
-    private let completion: (Result<String, Error>) -> Void
+    private let completion: (Result<[gopherItem], Error>) -> Void
 
-    init(message: String, completion: @escaping (Result<String, Error>) -> Void) {
+    init(message: String, completion: @escaping (Result<[gopherItem], Error>) -> Void) {
         self.message = message
         self.completion = completion
         self.accumulatedData = ByteBuffer()
@@ -95,17 +95,24 @@ final class GopherRequestResponseHandler: ChannelInboundHandler {
         
         print("done parsing")
         
-        completion(.success(response))
+        completion(.success(gopherServerResponse))
+        
+        //completion(.success(response))
     }
 }
 
-struct gopherItem {
-    var rawLine: String
-    var message: String = ""
-    var parsedItemType: gopherItemType = .info
-    var host: String = "error.host"
-    var port: Int = 1
-    var selector: String = ""
-    var valid: Bool = true
+public struct gopherItem {
+    
+    public var rawLine: String
+    public var message: String = ""
+    public var parsedItemType: gopherItemType = .info
+    public var host: String = "error.host"
+    public var port: Int = 1
+    public var selector: String = ""
+    public var valid: Bool = true
+    
+    public init(rawLine: String) {
+        self.rawLine = rawLine
+    }
 }
 

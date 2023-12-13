@@ -19,7 +19,7 @@ public class GopherClient {
         try? group.syncShutdownGracefully()
     }
 
-    public func sendRequest(to host: String, port: Int = 70, message: String, completion: @escaping (Result<String, Error>) -> Void) {
+    public func sendRequest(to host: String, port: Int = 70, message: String, completion: @escaping (Result<[gopherItem], Error>) -> Void) {
         let bootstrap = ClientBootstrap(group: group)
             .channelOption(ChannelOptions.socketOption(.so_reuseaddr), value: 1)
             .channelInitializer { channel in
