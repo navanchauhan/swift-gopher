@@ -9,7 +9,8 @@ let package = Package(
     .library(
         name: "swiftGopher",
         targets: ["swiftGopherClient"]
-    )
+    ),
+    .library(name: "swiftGopherClient", targets: ["swiftGopherClient"]),
   ],
   dependencies: [
     .package(
