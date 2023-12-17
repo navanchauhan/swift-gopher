@@ -31,3 +31,9 @@ jobs:
           transform-for-static-hosting: true
           hosting-base-path: swift-gopher
           output: docs
+      - name: Upload docs
+        uses: actions/upload-artifact@v1
+        if: always()
+        with:
+          name: docs
+          path: docs
