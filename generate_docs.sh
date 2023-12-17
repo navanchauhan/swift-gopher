@@ -11,7 +11,7 @@ do
     cp -r $target-docs/index/index.json "docs/index/$modified_target.json"
 done
 
-echo "<!DOCTYPE html><html><head><meta http-equiv=\"refresh\" content=\"0; url=/swift-gopher/documentation/\" /></head><body><ol>" > docs/index.html
+echo "<!DOCTYPE html><html><head></head><body><ol>" > docs/index.html
 
 for target in "$@"
 do
