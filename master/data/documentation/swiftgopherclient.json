@@ -1,0 +1,99 @@
+{
+  "hierarchy" : {
+    "paths" : [
+      [
+
+      ]
+    ]
+  },
+  "identifier" : {
+    "interfaceLanguage" : "swift",
+    "url" : "doc:\/\/swiftGopherClient\/documentation\/swiftGopherClient"
+  },
+  "kind" : "symbol",
+  "metadata" : {
+    "externalID" : "swiftGopherClient",
+    "modules" : [
+      {
+        "name" : "swiftGopherClient"
+      }
+    ],
+    "role" : "collection",
+    "roleHeading" : "Framework",
+    "symbolKind" : "module",
+    "title" : "swiftGopherClient"
+  },
+  "schemaVersion" : {
+    "major" : 0,
+    "minor" : 3,
+    "patch" : 0
+  },
+  "sections" : [
+
+  ],
+  "topicSections" : [
+    {
+      "identifiers" : [
+        "doc:\/\/swiftGopherClient\/documentation\/swiftGopherClient\/GopherClient"
+      ],
+      "title" : "Classes"
+    }
+  ],
+  "variants" : [
+    {
+      "paths" : [
+        "\/documentation\/swiftgopherclient"
+      ],
+      "traits" : [
+        {
+          "interfaceLanguage" : "swift"
+        }
+      ]
+    }
+  ]
+, 
+"references": {
+"doc://swiftGopherClient/documentation/swiftGopherClient": {
+  "abstract" : [
+
+  ],
+  "identifier" : "doc:\/\/swiftGopherClient\/documentation\/swiftGopherClient",
+  "kind" : "symbol",
+  "role" : "collection",
+  "title" : "swiftGopherClient",
+  "type" : "topic",
+  "url" : "\/documentation\/swiftgopherclient"
+},
+"doc://swiftGopherClient/documentation/swiftGopherClient/GopherClient": {
+  "abstract" : [
+
+  ],
+  "fragments" : [
+    {
+      "kind" : "keyword",
+      "text" : "class"
+    },
+    {
+      "kind" : "text",
+      "text" : " "
+    },
+    {
+      "kind" : "identifier",
+      "text" : "GopherClient"
+    }
+  ],
+  "identifier" : "doc:\/\/swiftGopherClient\/documentation\/swiftGopherClient\/GopherClient",
+  "kind" : "symbol",
+  "navigatorTitle" : [
+    {
+      "kind" : "identifier",
+      "text" : "GopherClient"
+    }
+  ],
+  "role" : "symbol",
+  "title" : "GopherClient",
+  "type" : "topic",
+  "url" : "\/documentation\/swiftgopherclient\/gopherclient"
+}
+}
+}
