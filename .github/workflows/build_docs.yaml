@@ -30,10 +30,7 @@ jobs:
         with:
           transform-for-static-hosting: true
           hosting-base-path: swift-gopher
-          targets:
-            - GopherHelpers
-            - swift-gopher
-            - swiftGopherClient
+          targets: "GopherHelpers\nswift-gopher\nswiftGopherClient"
           output: docs
       - name: Upload docs
         uses: actions/upload-artifact@v1
