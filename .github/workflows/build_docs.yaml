@@ -30,14 +30,17 @@ jobs:
         with:
           transform-for-static-hosting: true
           hosting-base-path: swift-gopher
-          targets: "GopherHelpers\nswift-gopher\nswiftGopherClient"
+          targets: |
+            GopherHelpers
+            swift-gopher
+            swiftGopherClient
           output: docs
       - name: Upload Docs
         uses: EndBug/add-and-commit@v9 
         with:
           add: "docs"
           message: Update Documentation
-          commiter_name: GitHub Actions
+          committer_name: GitHub Actions
           committer_email: actions@github.com
 
 
