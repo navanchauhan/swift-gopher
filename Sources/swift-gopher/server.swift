@@ -16,7 +16,7 @@ struct swiftGopher: ParsableCommand {
   var port: Int = 8080
   @Option(name: [.customShort("d"), .long], help: "Data directory to map")
   var gopherDataDir: String = "./example-gopherdata"
-  @Flag(help: "Disable full-text search feature") 
+  @Flag(help: "Disable full-text search feature")
   var disableSearch: Bool = false
   @Flag(help: "Disable reading gophermap files to override automatic generation")
   var disableGophermap: Bool = false

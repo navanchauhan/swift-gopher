@@ -1,8 +1,8 @@
 import ArgumentParser
 import Foundation
+import GopherHelpers
 import Logging
 import NIO
-import GopherHelpers
 
 final class GopherHandler: ChannelInboundHandler {
   typealias InboundIn = ByteBuffer
@@ -37,9 +37,11 @@ final class GopherHandler: ChannelInboundHandler {
     }
 
     if let remoteAddress = context.remoteAddress {
-        logger.info("Received request from \(remoteAddress) for '\(requestString.replacingOccurrences(of: "\r\n", with: "<GopherSequence>").replacingOccurrences(of: "\n", with: "<Linebreak>"))'")
+      logger.info(
+        "Received request from \(remoteAddress) for '\(requestString.replacingOccurrences(of: "\r\n", with: "<GopherSequence>").replacingOccurrences(of: "\n", with: "<Linebreak>"))'"
+      )
     } else {
-        logger.warning("Unable to retrieve remote address")
+      logger.warning("Unable to retrieve remote address")
     }
 
     let response = processGopherRequest(requestString)
@@ -110,7 +112,7 @@ final class GopherHandler: ChannelInboundHandler {
 
     // Now check if there is still a prefix
     if sanitizedPath.hasPrefix("/") {
-        sanitizedPath = String(sanitizedPath.dropFirst())
+      sanitizedPath = String(sanitizedPath.dropFirst())
     }
 
     let full_path = base_dir.appendingPathComponent(sanitizedPath)
@@ -135,26 +137,26 @@ final class GopherHandler: ChannelInboundHandler {
 
     var basePath = URL(fileURLWithPath: gopherdata_dir).path
     if basePath.hasSuffix("/") {
-        basePath = String(basePath.dropLast())
+      basePath = String(basePath.dropLast())
     }
 
     let fm = FileManager.default
     do {
-        print("Reading directory: \(path.path)")
-        let itemsInDirectory = try fm.contentsOfDirectory(at: path, includingPropertiesForKeys: nil)
-        for item in itemsInDirectory {
-            let isDirectory = try item.resourceValues(forKeys: [.isDirectoryKey]).isDirectory ?? false
-            let name = item.lastPathComponent
-            if isDirectory {
-                items.append(generateGopherItem(item_name: "1\(name)", item_path: item))
-            } else {
-                let fileType = getFileType(fileExtension: item.pathExtension)
-                let gopherFileType = fileTypeToGopherItem(fileType: fileType)
-                items.append(generateGopherItem(item_name: "\(gopherFileType)\(name)", item_path: item))
-            }
+      print("Reading directory: \(path.path)")
+      let itemsInDirectory = try fm.contentsOfDirectory(at: path, includingPropertiesForKeys: nil)
+      for item in itemsInDirectory {
+        let isDirectory = try item.resourceValues(forKeys: [.isDirectoryKey]).isDirectory ?? false
+        let name = item.lastPathComponent
+        if isDirectory {
+          items.append(generateGopherItem(item_name: "1\(name)", item_path: item))
+        } else {
+          let fileType = getFileType(fileExtension: item.pathExtension)
+          let gopherFileType = fileTypeToGopherItem(fileType: fileType)
+          items.append(generateGopherItem(item_name: "\(gopherFileType)\(name)", item_path: item))
         }
+      }
     } catch {
-        print("Error reading directory: \(path.path)")
+      print("Error reading directory: \(path.path)")
     }
     return items
   }
@@ -171,14 +173,14 @@ final class GopherHandler: ChannelInboundHandler {
         let gophermap_lines = gophermap_contents.components(separatedBy: "\n")
         for originalLine in gophermap_lines {
           // Only keep first 80 characters
-          var line = String(originalLine)//.prefix(80)
-           if "0123456789+gIT:;<dhprsPXi".contains(line.prefix(1)) && line.count > 1 {
+          var line = String(originalLine)  //.prefix(80)
+          if "0123456789+gIT:;<dhprsPXi".contains(line.prefix(1)) && line.count > 1 {
             if line.hasSuffix("\n") {
               line = String(line.dropLast())
             }
             if line.prefix(1) == "i" {
               gopherResponse.append("\(line)\t\terror.host\t1\r\n")
-                continue
+              continue
             }
 
             let regex = try! NSRegularExpression(pattern: "\\t+| {2,}")
@@ -201,7 +203,7 @@ final class GopherHandler: ChannelInboundHandler {
             }
 
             if components.count < 3 {
-                continue
+              continue
             }
 
             let item_name = components[0]
@@ -227,18 +229,17 @@ final class GopherHandler: ChannelInboundHandler {
 
     // Append Search
     if enableSearch {
-        let search_line = "7Search Server\t/search\t\(gopherdata_host)\t\(gopherdata_port)\r\n"
-        gopherResponse.append(search_line)
+      let search_line = "7Search Server\t/search\t\(gopherdata_host)\t\(gopherdata_port)\r\n"
+      gopherResponse.append(search_line)
     }
 
     // Append Server Info
     gopherResponse.append(buildVersionStringResponse())
-    
 
     return gopherResponse.joined(separator: "")
   }
 
-    // TODO: Refactor
+  // TODO: Refactor
   func performSearch(query: String) -> String {
     // Really basic search implementation
 
@@ -326,28 +327,28 @@ final class GopherHandler: ChannelInboundHandler {
 
     // Fix for "Gopher" (iOS) client sending an extra \n
     if request.hasSuffix("\n\n") {
-        request = String(request.dropLast())
+      request = String(request.dropLast())
     }
 
-    if request == "\r\n" { // Empty request
+    if request == "\r\n" {  // Empty request
       return .string(prepareGopherMenu(path: preparePath()))
     }
 
     // Again, fix for the iOS client. Might as well make my own client
     if request.hasSuffix("\n") {
-        request = String(request.dropLast())
+      request = String(request.dropLast())
     }
 
     if request.contains("\t") {
-        if enableSearch {
-            var searchQuery = request.components(separatedBy: "\t")[1]
-            searchQuery = searchQuery.replacingOccurrences(of: "\r\n", with: "")
-            return .string(performSearch(query: searchQuery.lowercased()))
-        } else {
-            return .string("3Search is disabled on this server.\r\n")
-        }
+      if enableSearch {
+        var searchQuery = request.components(separatedBy: "\t")[1]
+        searchQuery = searchQuery.replacingOccurrences(of: "\r\n", with: "")
+        return .string(performSearch(query: searchQuery.lowercased()))
+      } else {
+        return .string("3Search is disabled on this server.\r\n")
+      }
     }
-    
+
     //TODO: Potential Bug in Gopher implementation? curl gopher://localhost:8080/new_folder/ does not work but curl gopher://localhost:8080//new_folder/ works (tested with gopher://gopher.meulie.net//EFFector/ as well)
     return requestHandler(path: preparePath(path: request))
   }

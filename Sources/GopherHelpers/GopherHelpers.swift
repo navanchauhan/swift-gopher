@@ -1,6 +1,6 @@
 //
 //  File.swift
-//  
+//
 //
 //  Created by Navan Chauhan on 12/16/23.
 //
@@ -9,9 +9,9 @@ import Foundation
 import NIOCore
 
 /*
- 
+
  From Wikipedia
- 
+
  Canonical types
  0    Text file
  1    Gopher submenu
@@ -43,99 +43,99 @@ import NIOCore
  */
 
 public enum gopherItemType {
-    case text
-    case directory
-    case nameserver
-    case error
-    case binhex
-    case bindos
-    case uuencoded
-    case search
-    case telnet
-    case binary
-    case mirror
-    case gif
-    case image
-    case tn3270Session
-    case bitmap
-    case movie
-    case sound
-    case doc
-    case html
-    case info
+  case text
+  case directory
+  case nameserver
+  case error
+  case binhex
+  case bindos
+  case uuencoded
+  case search
+  case telnet
+  case binary
+  case mirror
+  case gif
+  case image
+  case tn3270Session
+  case bitmap
+  case movie
+  case sound
+  case doc
+  case html
+  case info
 }
 
 public struct gopherItem {
-    
-    public var rawLine: String
-    public var rawData: ByteBuffer?
-    public var message: String = ""
-    public var parsedItemType: gopherItemType = .info
-    public var host: String = "error.host"
-    public var port: Int = 1
-    public var selector: String = ""
-    public var valid: Bool = true
-    
-    public init(rawLine: String) {
-        self.rawLine = rawLine
-    }
+
+  public var rawLine: String
+  public var rawData: ByteBuffer?
+  public var message: String = ""
+  public var parsedItemType: gopherItemType = .info
+  public var host: String = "error.host"
+  public var port: Int = 1
+  public var selector: String = ""
+  public var valid: Bool = true
+
+  public init(rawLine: String) {
+    self.rawLine = rawLine
+  }
 }
 
 public func getGopherFileType(item: String) -> gopherItemType {
-    switch item {
-    case "0":
-        return .text
-    case "1":
-        return .directory
-    case "2":
-        return .nameserver
-    case "3":
-        return .error
-    case "4":
-        return .binhex
-    case "5":
-        return .bindos
-    case "6":
-        return .uuencoded
-    case "7":
-        return .search
-    case "8":
-        return .telnet
-    case "9":
-        return .binary
-    case "+":
-        return .mirror
-    case "g":
-        return .gif
-    case "I":
-        return .image
-    case "T":
-        return .tn3270Session
-    case ":":
-        return .bitmap
-    case ";":
-        return .movie
-    case "<":
-        return .sound
-    case "d":
-        return .doc
-    case "h":
-        return .html
-    case "i":
-        return .info
-    case "p":
-        return .image
-    case "r":
-        return .doc
-    case "s":
-        return .doc
-    case "P":
-        return .doc
-    case "X":
-        return .doc
-    default:
-        return .info
-    }
+  switch item {
+  case "0":
+    return .text
+  case "1":
+    return .directory
+  case "2":
+    return .nameserver
+  case "3":
+    return .error
+  case "4":
+    return .binhex
+  case "5":
+    return .bindos
+  case "6":
+    return .uuencoded
+  case "7":
+    return .search
+  case "8":
+    return .telnet
+  case "9":
+    return .binary
+  case "+":
+    return .mirror
+  case "g":
+    return .gif
+  case "I":
+    return .image
+  case "T":
+    return .tn3270Session
+  case ":":
+    return .bitmap
+  case ";":
+    return .movie
+  case "<":
+    return .sound
+  case "d":
+    return .doc
+  case "h":
+    return .html
+  case "i":
+    return .info
+  case "p":
+    return .image
+  case "r":
+    return .doc
+  case "s":
+    return .doc
+  case "P":
+    return .doc
+  case "X":
+    return .doc
+  default:
+    return .info
+  }
 }
 
 public func getFileType(fileExtension: String) -> gopherItemType {
@@ -174,7 +174,6 @@ public func getFileType(fileExtension: String) -> gopherItemType {
     return .binary
   }
 }
-
 
 public func fileTypeToGopherItem(fileType: gopherItemType) -> String {
   switch fileType {
@@ -218,42 +217,42 @@ public func fileTypeToGopherItem(fileType: gopherItemType) -> String {
     return "h"
   case .info:
     return "i"
-//  case .png:
-//    return "p"
-//  case .rtf:
-//    return "t"
-//  case .wavfile:
-//    return "w"
-//  case .pdf:
-//    return "P"
-//  case .xml:
-//    return "x"
+  //  case .png:
+  //    return "p"
+  //  case .rtf:
+  //    return "t"
+  //  case .wavfile:
+  //    return "w"
+  //  case .pdf:
+  //    return "P"
+  //  case .xml:
+  //    return "x"
   }
 }
 
 public func itemToImageType(_ item: gopherItem) -> String {
-    switch item.parsedItemType {
-    case .text:
-        return "doc.plaintext"
-    case .directory:
-        return "folder"
-    case .error:
-        return "exclamationmark.triangle"
-    case .gif:
-        return "photo.stack"
-    case .image:
-        return "photo"
-    case .doc:
-        return "doc.richtext"
-    case .sound:
-        return "music.note"
-    case .bitmap:
-        return "photo"
-    case .html:
-        return "globe"
-    case .movie:
-        return "videoprojector"
-    default:
-        return "questionmark.square.dashed"
-    }
+  switch item.parsedItemType {
+  case .text:
+    return "doc.plaintext"
+  case .directory:
+    return "folder"
+  case .error:
+    return "exclamationmark.triangle"
+  case .gif:
+    return "photo.stack"
+  case .image:
+    return "photo"
+  case .doc:
+    return "doc.richtext"
+  case .sound:
+    return "music.note"
+  case .bitmap:
+    return "photo"
+  case .html:
+    return "globe"
+  case .movie:
+    return "videoprojector"
+  default:
+    return "questionmark.square.dashed"
+  }
 }
