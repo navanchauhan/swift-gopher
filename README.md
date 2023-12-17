@@ -25,6 +25,11 @@
 
 # Swift-Gopher
 
+* swift-gopher : Gopher server implementation written in Swift
+* swiftGopherClient: Gopher client library written in Swift ( w/ Support for Network.Framework on Apple platforms)
+
+This package also provides GopherHelpers which may be useful while building a client. A PoC client for iOS/macOS/iPadOS called `iGopherBrowser` uses both `GopherHelpers` and `swiftGopherClient`
+
 You can interact with my hosted gopher server at [gopher://gopher.navan.dev](gopher://gopher.navan.dev) or [https://gopher.navan.dev](https://gopher.navan.dev)
 
 ```
@@ -98,11 +103,11 @@ Although, `swift-gopher` does not currently have a native HTTP handler, you can 
 
 - [ ] Add Tests
 - [ ] Add CI
-- [ ] Add more documentation
+- [x] Add more documentation
 - [ ] Automatic Versioning
 - [ ] Verify Compatibility with other Gopher Clients
 - [ ] Support Gemini Protocol
-- [ ] Add a client library
+- [x] Add a client library
 - [ ] Add native HTTP handler
 - [ ] Guestbook
 
@@ -111,3 +116,7 @@ Although, `swift-gopher` does not currently have a native HTTP handler, you can 
 ```bash
 ./generate_docs.sh swiftGopherClient swift-gopher GopherHelpers
 ```
+
+### Reference Documentation
+
+Reference Documentation is hosted at [https://web.navan.dev/swift-gopher](https://web.navan.dev/swift-gopher)
