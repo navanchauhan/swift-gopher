@@ -17,10 +17,8 @@ concurrency:
 
 jobs:
   generate-and-publish-docs:
-    uses: sersoft-gmbh/oss-common-actions/.github/workflows/swift-generate-and-publish-docs.yml@main
+    uses: sersoft-gmbh/swifty-docs-action@v3 
     with:
-      os: macOS
-      swift-version: '5.9'
-      organisation: ${{ github.repository_owner }}
-      repository: ${{ github.event.repository.name }}
-      pages-branch: gh-pages
+      transform-for-static-hosting: true
+      hosting-base-path: swift-gopher
+      output: docs
