@@ -62,6 +62,15 @@
         "revision" : "702cd7c56d5d44eeba73fdf83918339b26dc855c",
         "version" : "2.62.0"
       }
+    },
+    {
+      "identity" : "swift-nio-transport-services",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/apple/swift-nio-transport-services.git",
+      "state" : {
+        "revision" : "ebf8b9c365a6ce043bf6e6326a04b15589bd285e",
+        "version" : "1.20.0"
+      }
     }
   ],
   "version" : 2

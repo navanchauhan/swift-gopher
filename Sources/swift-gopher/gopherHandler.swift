@@ -2,6 +2,7 @@ import ArgumentParser
 import Foundation
 import Logging
 import NIO
+import GopherHelpers
 
 final class GopherHandler: ChannelInboundHandler {
   typealias InboundIn = ByteBuffer

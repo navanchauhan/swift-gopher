@@ -7,6 +7,7 @@
 
 import Foundation
 import NIO
+import GopherHelpers
 
 final class GopherRequestResponseHandler: ChannelInboundHandler {
     typealias InboundIn = ByteBuffer
@@ -31,17 +32,12 @@ final class GopherRequestResponseHandler: ChannelInboundHandler {
     func channelRead(context: ChannelHandlerContext, data: NIOAny) {
         var buffer = unwrapInboundIn(data)
         accumulatedData.writeBuffer(&buffer)
-        if let receivedString = buffer.getString(at: 0, length: buffer.readableBytes) {
-            print("Received from server: \(receivedString)")
-        }
-        //completion(.success(receivedString))
-        //context.close(promise: nil)
     }
     
     func channelInactive(context: ChannelHandlerContext) {
-            // Parse GopherServerResponse
-        parseGopherServerResponse(response: accumulatedData.readString(length: accumulatedData.readableBytes) ?? "")
-            //completion(.success(accumulatedData.readString(length: accumulatedData.readableBytes) ?? ""))
+        if let dataCopy = accumulatedData.getSlice(at: 0, length: accumulatedData.readableBytes) {
+            parseGopherServerResponse(response: accumulatedData.readString(length: accumulatedData.readableBytes) ?? "", originalBytes: dataCopy)
+        }
         }
 
     func errorCaught(context: ChannelHandlerContext, error: Error) {
@@ -49,9 +45,10 @@ final class GopherRequestResponseHandler: ChannelInboundHandler {
         context.close(promise: nil)
     }
     
-    func createGopherItem(rawLine: String, itemType: gopherItemType = .info) -> gopherItem {
+    func createGopherItem(rawLine: String, itemType: gopherItemType = .info, rawData: ByteBuffer) -> gopherItem {
         var item = gopherItem(rawLine: rawLine)
         item.parsedItemType = itemType
+        item.rawData = rawData
         
         if rawLine.isEmpty {
             item.valid = false
@@ -77,7 +74,7 @@ final class GopherRequestResponseHandler: ChannelInboundHandler {
         return item
     }
     
-    func parseGopherServerResponse(response: String) {
+    func parseGopherServerResponse(response: String, originalBytes: ByteBuffer) {
         var gopherServerResponse: [gopherItem] = []
         
         print("parsing")
@@ -87,8 +84,7 @@ final class GopherRequestResponseHandler: ChannelInboundHandler {
         
         for line in response.split(separator: "\r\n") {
             let lineItemType = getGopherFileType(item: "\(line.first ?? " ")")
-            let item = createGopherItem(rawLine: String(line), itemType: lineItemType)
-            print(item.message)
+            let item = createGopherItem(rawLine: String(line), itemType: lineItemType, rawData: originalBytes)
             gopherServerResponse.append(item)
             
         }
@@ -96,23 +92,8 @@ final class GopherRequestResponseHandler: ChannelInboundHandler {
         print("done parsing")
         
         completion(.success(gopherServerResponse))
-        
-        //completion(.success(response))
     }
 }
 
-public struct gopherItem {
-    
-    public var rawLine: String
-    public var message: String = ""
-    public var parsedItemType: gopherItemType = .info
-    public var host: String = "error.host"
-    public var port: Int = 1
-    public var selector: String = ""
-    public var valid: Bool = true
-    
-    public init(rawLine: String) {
-        self.rawLine = rawLine
-    }
-}
+
 

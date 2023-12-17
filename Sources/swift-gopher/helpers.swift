@@ -7,3 +7,8 @@ func buildVersionStringResponse() -> String {
     let versionResponseString = "i" + String(repeating: " ", count: 80 - versionString.count) + versionString + "\t\terror.host\t1\r\n"
     return "\(repeatedString)\(versionResponseString)"
 }
+
+enum ResponseType {
+  case string(String)
+  case data(Data)
+}
