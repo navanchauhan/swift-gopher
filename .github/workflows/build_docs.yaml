@@ -32,9 +32,12 @@ jobs:
           hosting-base-path: swift-gopher
           targets: "GopherHelpers\nswift-gopher\nswiftGopherClient"
           output: docs
-      - name: Upload docs
-        uses: actions/upload-artifact@v1
-        if: always()
+      - name: Upload Docs
+        uses: EndBug/add-and-commit@v9 
         with:
-          name: docs
-          path: docs
+          add: "docs"
+          message: Update Documentation
+          commiter_name: GitHub Actions
+          committer_email: actions@github.com
+
+
