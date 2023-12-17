@@ -19,6 +19,8 @@ jobs:
   generate-and-publish-docs:
     runs-on: macOS-latest
     steps:
+      - name: Get da Code
+        uses: actions/checkout@v4
       - name: Swift Package Documentation Generator
         uses: sersoft-gmbh/swifty-docs-action@v3.0.0
         with:
