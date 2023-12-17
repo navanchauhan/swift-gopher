@@ -21,6 +21,10 @@ jobs:
     steps:
       - name: Get da Code
         uses: actions/checkout@v4
+      - name: Setup Swift
+        uses: swift-actions/setup-swift@v1.25.0
+        with:
+          swift-version: '5.9'
       - name: Swift Package Documentation Generator
         uses: sersoft-gmbh/swifty-docs-action@v3.0.0
         with:
