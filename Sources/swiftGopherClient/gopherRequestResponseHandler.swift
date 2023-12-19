@@ -88,12 +88,22 @@ final class GopherRequestResponseHandler: ChannelInboundHandler {
       "Carriage Returns: \(carriageReturnCount), Newline + Carriage Returns: \(newlineCarriageReturnCount)"
     )
 
-    for line in response.split(separator: "\r\n") {
-      let lineItemType = getGopherFileType(item: "\(line.first ?? " ")")
-      let item = createGopherItem(
-        rawLine: String(line), itemType: lineItemType, rawData: originalBytes)
-      gopherServerResponse.append(item)
+    if carriageReturnCount == 0 {
+      for line in response.split(separator: "\n") {
+        let lineItemType = getGopherFileType(item: "\(line.first ?? " ")")
+        let item = createGopherItem(
+          rawLine: String(line), itemType: lineItemType, rawData: originalBytes)
+        gopherServerResponse.append(item)
 
+      }
+    } else {
+      for line in response.split(separator: "\r\n") {
+        let lineItemType = getGopherFileType(item: "\(line.first ?? " ")")
+        let item = createGopherItem(
+          rawLine: String(line), itemType: lineItemType, rawData: originalBytes)
+        gopherServerResponse.append(item)
+
+      }
     }
 
     print("done parsing")
