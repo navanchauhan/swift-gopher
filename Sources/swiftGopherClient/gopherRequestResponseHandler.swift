@@ -88,7 +88,7 @@ final class GopherRequestResponseHandler: ChannelInboundHandler {
       "Carriage Returns: \(carriageReturnCount), Newline + Carriage Returns: \(newlineCarriageReturnCount)"
     )
 
-    if carriageReturnCount == 0 {
+    if newlineCarriageReturnCount == 0 {
       for line in response.split(separator: "\n") {
         let lineItemType = getGopherFileType(item: "\(line.first ?? " ")")
         let item = createGopherItem(
