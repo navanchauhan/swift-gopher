@@ -20,7 +20,7 @@ public class GopherClient {
   ///
   /// It automatically chooses the appropriate `EventLoopGroup` based on the running platform.
   public init() {
-    if #available(macOS 10.14, iOS 12.0, tvOS 12.0, watchOS 6.0, *) {
+      if #available(macOS 10.14, iOS 12.0, tvOS 12.0, watchOS 6.0, visionOS 1.0, *) {
       self.group = NIOTSEventLoopGroup()
     } else {
       self.group = MultiThreadedEventLoopGroup(numberOfThreads: System.coreCount)
@@ -44,7 +44,7 @@ public class GopherClient {
     to host: String, port: Int = 70, message: String,
     completion: @escaping (Result<[gopherItem], Error>) -> Void
   ) {
-    if #available(macOS 10.14, iOS 12.0, tvOS 12.0, watchOS 6.0, *) {
+      if #available(macOS 10.14, iOS 12.0, tvOS 12.0, watchOS 6.0, visionOS 1.0, *) {
       let bootstrap = NIOTSConnectionBootstrap(group: group)
         .channelOption(ChannelOptions.socketOption(.so_reuseaddr), value: 1)
         .channelInitializer { channel in
