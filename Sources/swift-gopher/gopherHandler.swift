@@ -334,6 +334,14 @@ final class GopherHandler: ChannelInboundHandler {
       return .string(prepareGopherMenu(path: preparePath()))
     }
 
+    // Check if request is an HTTP url
+    if request.hasPrefix("URL:") {
+      let url = String(request.dropFirst(4))
+      return .string(
+        "<!DOCTYPE html><html><head><meta http-equiv=\"refresh\" content=\"0; url=\(url)\" /></head><body></body></html>"
+      )
+    }
+
     // Again, fix for the iOS client. Might as well make my own client
     if request.hasSuffix("\n") {
       request = String(request.dropLast())
