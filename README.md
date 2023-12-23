@@ -25,6 +25,9 @@
 
 # Swift-Gopher
 
+[![](https://img.shields.io/endpoint?url=https%3A%2F%2Fswiftpackageindex.com%2Fapi%2Fpackages%2Fnavanchauhan%2Fswift-gopher%2Fbadge%3Ftype%3Dswift-versions)](https://swiftpackageindex.com/navanchauhan/swift-gopher)
+[![](https://img.shields.io/endpoint?url=https%3A%2F%2Fswiftpackageindex.com%2Fapi%2Fpackages%2Fnavanchauhan%2Fswift-gopher%2Fbadge%3Ftype%3Dplatforms)](https://swiftpackageindex.com/navanchauhan/swift-gopher)
+
 * swift-gopher : Gopher server implementation written in Swift
 * swiftGopherClient: Gopher client library written in Swift ( w/ Support for Network.Framework on Apple platforms)
 
