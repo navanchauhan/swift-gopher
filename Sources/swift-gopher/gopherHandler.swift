@@ -277,9 +277,13 @@ final class GopherHandler: ChannelInboundHandler {
     var gopherResponse: [String] = []
 
     for (_, file_path) in search_results {
-      let item_type =
+      var item_type =
         try? URL(fileURLWithPath: file_path).resourceValues(forKeys: [.isDirectoryKey]).isDirectory
         ?? false ? "1" : "0"
+      if item_type == "0" {
+        item_type = fileTypeToGopherItem(
+          fileType: getFileType(fileExtension: URL(fileURLWithPath: file_path).pathExtension))
+      }
       let item_host = gopherdata_host
       let item_port = gopherdata_port
       let item_path = file_path.replacingOccurrences(of: base_dir.path, with: "")
