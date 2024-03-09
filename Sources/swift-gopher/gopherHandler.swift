@@ -29,34 +29,79 @@ final class GopherHandler: ChannelInboundHandler {
     self.disableGophermap = disableGophermap
   }
 
+  private var buffer = ByteBuffer()
+  let delChar = Character(UnicodeScalar(127))
+  let backspaceChar = Character(UnicodeScalar(8))
+
   func channelRead(context: ChannelHandlerContext, data: NIOAny) {
-    let input = self.unwrapInboundIn(data)
+    var input = self.unwrapInboundIn(data)
+    buffer.writeBuffer(&input)
 
-    guard let requestString = input.getString(at: 0, length: input.readableBytes) else {
-      return
-    }
+    print(buffer.readableBytes)
 
-    if let remoteAddress = context.remoteAddress {
-      logger.info(
-        "Received request from \(remoteAddress) for '\(requestString.replacingOccurrences(of: "\r\n", with: "<GopherSequence>").replacingOccurrences(of: "\n", with: "<Linebreak>"))'"
-      )
-    } else {
-      logger.warning("Unable to retrieve remote address")
-    }
+    if let requestString = buffer.getString(at: 0, length: buffer.readableBytes) {
+      if requestString.firstIndex(of: "\r\n") != nil || requestString.firstIndex(of: "\n") != nil
+        || requestString.firstIndex(of: "\r") != nil
+      {  // May not be necessary to use last two cases
+        if let remoteAddress = context.remoteAddress {
+          logger.info(
+            "Received request from \(remoteAddress) for '\(requestString.replacingOccurrences(of: "\r\n", with: "<GopherSequence>").replacingOccurrences(of: "\n", with: "<Linebreak>"))'"
+          )
+        } else {
+          logger.warning("Unable to retrieve remote address")
+        }
 
-    let response = processGopherRequest(requestString)
+        var processedRequestString: String = requestString
+        // Check for backspace or delete and process them
+        if processedRequestString.contains(delChar)
+          || processedRequestString.contains(backspaceChar)
+        {
+          logger.info(
+            "Request contains delete character (ASCII code 127) or the backsapce character (ASCII code 8), processing delete sequences"
+          )
 
-    var buffer: ByteBuffer
+          func processDeleteCharacter(_ input: String, _ asciiCode: Int = 8) -> String {
+            var result: [Character] = []
+            for character in input {
+              if let asciiValue = character.asciiValue, asciiValue == asciiCode {
+                if !result.isEmpty {
+                  result.removeLast()
+                }
+              } else {
+                result.append(character)
+              }
+            }
+            return String(result)
+          }
 
-    switch response {
-    case .string(let string):
-      buffer = context.channel.allocator.buffer(string: string)
-    case .data(let data):
-      buffer = context.channel.allocator.buffer(bytes: data)
-    }
+          processedRequestString = processDeleteCharacter(requestString, 127)
+          processedRequestString = processDeleteCharacter(processedRequestString)  // Could just combine in one statement if asciiCode is changed to asciiCodes: [Int]
+        }
 
-    context.writeAndFlush(self.wrapOutboundOut(buffer)).whenComplete { _ in
-      context.close(mode: .all, promise: nil)
+        //              for character in requestString { // Helpful for debugging
+        //                  if let scalar = character.unicodeScalars.first, scalar.value < 128 {
+        //                      print("\(character): \(scalar.value)")
+        //                  } else {
+        //                      print("\(character): Not an ASCII character")
+        //                  }
+        //              }
+
+        let response = processGopherRequest(processedRequestString)
+        var outputBuffer: ByteBuffer
+        switch response {
+        case .string(let string):
+          outputBuffer = context.channel.allocator.buffer(string: string)
+        case .data(let data):
+          outputBuffer = context.channel.allocator.buffer(bytes: data)
+        }
+
+        context.writeAndFlush(self.wrapOutboundOut(outputBuffer)).whenComplete { _ in
+          context.close(mode: .all, promise: nil)
+        }
+
+      } else {
+        //print("No CR/LF")
+      }
     }
   }
 
