@@ -1,1 +1,3 @@
-Try searching for the word "example" using the search function
+You just made the server read the file `example.txt`!
+
+Now, Try searching for the word "example" using the search function
