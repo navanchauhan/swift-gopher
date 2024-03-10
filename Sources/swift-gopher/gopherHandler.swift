@@ -37,7 +37,7 @@ final class GopherHandler: ChannelInboundHandler {
     var input = self.unwrapInboundIn(data)
     buffer.writeBuffer(&input)
 
-    print(buffer.readableBytes)
+    //    print(buffer.readableBytes)
 
     if let requestString = buffer.getString(at: 0, length: buffer.readableBytes) {
       if requestString.firstIndex(of: "\r\n") != nil || requestString.firstIndex(of: "\n") != nil
@@ -51,7 +51,8 @@ final class GopherHandler: ChannelInboundHandler {
           logger.warning("Unable to retrieve remote address")
         }
 
-        var processedRequestString: String = requestString
+        var processedRequestString: String = requestString.replacingOccurrences(
+          of: "\r\0", with: "")
         // Check for backspace or delete and process them
         if processedRequestString.contains(delChar)
           || processedRequestString.contains(backspaceChar)
@@ -78,13 +79,13 @@ final class GopherHandler: ChannelInboundHandler {
           processedRequestString = processDeleteCharacter(processedRequestString)  // Could just combine in one statement if asciiCode is changed to asciiCodes: [Int]
         }
 
-        //              for character in requestString { // Helpful for debugging
-        //                  if let scalar = character.unicodeScalars.first, scalar.value < 128 {
-        //                      print("\(character): \(scalar.value)")
-        //                  } else {
-        //                      print("\(character): Not an ASCII character")
-        //                  }
-        //              }
+//        for character in requestString {  // Helpful for debugging
+//          if let scalar = character.unicodeScalars.first, scalar.value < 128 {
+//            print("\(character): \(scalar.value)")
+//          } else {
+//            print("\(character): Not an ASCII character")
+//          }
+//        }
 
         let response = processGopherRequest(processedRequestString)
         var outputBuffer: ByteBuffer
