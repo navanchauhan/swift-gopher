@@ -73,6 +73,8 @@ To give privilege to the binary on Linux, you can use the following command:
 sudo setcap CAP_NET_BIND_SERVICE=+eip ./.build/release/swift-gopher
 ```
 
+You can also refer to the systemd file below to grant the binary the same privileges
+
 ## Deploying
 
 ### Systemd
