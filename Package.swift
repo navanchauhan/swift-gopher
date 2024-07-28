@@ -4,9 +4,9 @@
 import PackageDescription
 
 let package = Package(
-  name: "swiftGopher",
+  name: "SwiftGopher",
   products: [
-    .library(name: "SwiftGopherClient", targets: ["swiftGopherClient"])
+    .library(name: "SwiftGopherClient", targets: ["SwiftGopherClient"])
   ],
   dependencies: [
     .package(url: "https://github.com/apple/swift-nio", from: "2.0.0"),
@@ -36,7 +36,7 @@ let package = Package(
       ]
     ),
     .target(
-      name: "swiftGopherClient",
+      name: "SwiftGopherClient",
       dependencies: [
         .product(name: "NIO", package: "swift-nio"),
         .product(name: "NIOTransportServices", package: "swift-nio-transport-services"),
@@ -44,9 +44,9 @@ let package = Package(
       ]
     ),
     .testTarget(
-      name: "swiftGopherClientTests",
-      dependencies: ["swiftGopherClient"]
+      name: "SwiftGopherClientTests",
+      dependencies: ["SwiftGopherClient"]
     ),
-    .testTarget(name: "swiftGopherServerTests", dependencies: ["swift-gopher"])
+    .testTarget(name: "SwiftGopherServerTests", dependencies: ["swift-gopher"])
   ]
 )

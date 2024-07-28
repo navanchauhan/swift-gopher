@@ -8,7 +8,7 @@
 import NIO
 import XCTest
 
-@testable import swiftGopherClient
+@testable import SwiftGopherClient
 
 final class GopherClientTests: XCTestCase {
 
