@@ -32,7 +32,7 @@ public class GopherClient {
     }
 
     deinit {
-        try? group.syncShutdownGracefully()
+        self.shutdownEventLoopGroup()
     }
 
     /// Sends a request to a Gopher server.
