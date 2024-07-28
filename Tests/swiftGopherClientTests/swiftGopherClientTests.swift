@@ -35,4 +35,10 @@ final class GopherClientTests: XCTestCase {
 
     wait(for: [expectation], timeout: 30)
   }
+    
+    func testGopherClientAsync() async throws {
+        let client = GopherClient()
+        let reply = try await client.sendRequest(to: "gopher.navan.dev", message: "\r\n")
+        XCTAssertNotNil(reply)
+    }
 }

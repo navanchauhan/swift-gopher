@@ -105,6 +105,56 @@ public class GopherClient {
     #endif
 
   }
+    
+    @available(iOS 13.0, *)
+    @available(macOS 10.15, *)
+    public func sendRequest(to host: String, port: Int = 70, message: String) async throws -> [gopherItem] {
+        return try await withCheckedThrowingContinuation { continuation in
+            let bootstrap = self.createBootstrap(message: message) { result in
+                continuation.resume(with: result)
+            }
+            
+            bootstrap.connect(host: host, port: port).whenComplete { result in
+                switch result {
+                case .success(let channel):
+                    channel.closeFuture.whenComplete { _ in
+                            print("Connection Closed")
+                    }
+                case .failure(let error):
+                    continuation.resume(throwing: error)
+                }
+            }
+        }
+    }
+    
+    private func createBootstrap(
+        message: String,
+        completion: @escaping (Result<[gopherItem], Error>) -> Void
+    ) -> NIOClientTCPBootstrapProtocol {
+        let handler = GopherRequestResponseHandler(message: message, completion: completion)
+
+        #if os(Linux)
+        return ClientBootstrap(group: eventLoopGroup)
+            .channelOption(ChannelOptions.socketOption(.so_reuseaddr), value: 1)
+            .channelInitializer { channel in
+                channel.pipeline.addHandler(handler)
+            }
+        #else
+        if #available(macOS 10.14, iOS 12.0, tvOS 12.0, watchOS 6.0, visionOS 1.0, *) {
+            return NIOTSConnectionBootstrap(group: group)
+                .channelOption(ChannelOptions.socketOption(.so_reuseaddr), value: 1)
+                .channelInitializer { channel in
+                    channel.pipeline.addHandler(handler)
+                }
+        } else {
+            return ClientBootstrap(group: group)
+                .channelOption(ChannelOptions.socketOption(.so_reuseaddr), value: 1)
+                .channelInitializer { channel in
+                    channel.pipeline.addHandler(handler)
+                }
+        }
+        #endif
+    }
 
   /// Shuts down the event loop group, releasing any resources.
   ///
