@@ -47,5 +47,6 @@ let package = Package(
       name: "swiftGopherClientTests",
       dependencies: ["swiftGopherClient"]
     ),
+    .testTarget(name: "swiftGopherServerTests", dependencies: ["swift-gopher"])
   ]
 )
