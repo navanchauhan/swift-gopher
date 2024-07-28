@@ -86,8 +86,7 @@ public class GopherClient {
     /// - Returns: An array of `gopherItem` representing the server's response.
     ///
     /// - Throws: An error if the connection fails or the server returns an invalid response.
-    @available(iOS 13.0, *)
-    @available(macOS 10.15, *)
+    @available(macOS 10.15, iOS 13.0, tvOS 12.0, watchOS 6.0, visionOS 1.0, * )
     public func sendRequest(to host: String, port: Int = 70, message: String) async throws
         -> [gopherItem]
     {
