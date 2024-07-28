@@ -12,13 +12,20 @@ import NIOTransportServices
 
 /// `GopherClient` is a class for handling network connections and requests to Gopher servers.
 ///
-/// It utilizes `NIOTSEventLoopGroup` on iOS/macOS (Not sure why you would run this on watchOS/tvOS but it supports that as well) for network operations, falling back to `MultiThreadedEventLoopGroup` otherwise.
+/// This client utilizes Swift NIO for efficient, non-blocking network operations. It automatically
+/// chooses the appropriate `EventLoopGroup` based on the running platform:
+/// - On iOS/macOS 10.14+, it uses `NIOTSEventLoopGroup` for optimal performance.
+/// - On Linux or older Apple platforms, it falls back to `MultiThreadedEventLoopGroup`.
+///
+/// The client supports both synchronous (completion handler-based) and asynchronous (Swift concurrency) APIs
+/// for sending requests to Gopher servers.
 public class GopherClient {
+    /// The event loop group used for managing network operations.
     private let group: EventLoopGroup
 
     /// Initializes a new instance of `GopherClient`.
     ///
-    /// It automatically chooses the appropriate `EventLoopGroup` based on the running platform.
+    /// This initializer automatically selects the appropriate `EventLoopGroup` based on the running platform.
     public init() {
         #if os(Linux)
             self.group = MultiThreadedEventLoopGroup(numberOfThreads: System.coreCount)
@@ -31,81 +38,54 @@ public class GopherClient {
         #endif
     }
 
+    /// Cleans up resources when the instance is deinitialized.
     deinit {
         self.shutdownEventLoopGroup()
     }
 
-    /// Sends a request to a Gopher server.
+    /// Sends a request to a Gopher server using a completion handler.
+    ///
+    /// This method asynchronously establishes a connection, sends the request, and calls the completion
+    /// handler with the result.
     ///
     /// - Parameters:
     ///   - host: The host address of the Gopher server.
     ///   - port: The port of the Gopher server. Defaults to 70.
     ///   - message: The message to be sent to the server.
-    ///   - completion: A closure that handles the result of the request.
-    ///
-    /// The method asynchronously establishes a connection, sends the request, and calls the completion handler with the result.
+    ///   - completion: A closure that handles the result of the request. It takes a `Result` type
+    ///     which either contains an array of `gopherItem` on success or an `Error` on failure.
     public func sendRequest(
-        to host: String, port: Int = 70, message: String,
+        to host: String,
+        port: Int = 70,
+        message: String,
         completion: @escaping (Result<[gopherItem], Error>) -> Void
     ) {
-        #if os(Linux)
-            let bootstrap = ClientBootstrap(group: group)
-                .channelOption(ChannelOptions.socketOption(.so_reuseaddr), value: 1)
-                .channelInitializer { channel in
-                    channel.pipeline.addHandler(
-                        GopherRequestResponseHandler(message: message, completion: completion))
+        let bootstrap = self.createBootstrap(message: message, completion: completion)
+        bootstrap.connect(host: host, port: port).whenComplete { result in
+            switch result {
+            case .success(let channel):
+                channel.closeFuture.whenComplete { _ in
+                    print("Connection closed")
                 }
-            bootstrap.connect(host: host, port: port).whenComplete { result in
-                switch result {
-                case .success(let channel):
-                    channel.closeFuture.whenComplete { _ in
-                        print("Connection closed")
-                    }
-                case .failure(let error):
-                    completion(.failure(error))
-                }
+            case .failure(let error):
+                completion(.failure(error))
             }
-        #else
-
-            if #available(macOS 10.14, iOS 12.0, tvOS 12.0, watchOS 6.0, visionOS 1.0, *) {
-                let bootstrap = NIOTSConnectionBootstrap(group: group)
-                    .channelOption(ChannelOptions.socketOption(.so_reuseaddr), value: 1)
-                    .channelInitializer { channel in
-                        channel.pipeline.addHandler(
-                            GopherRequestResponseHandler(message: message, completion: completion))
-                    }
-                bootstrap.connect(host: host, port: port).whenComplete { result in
-                    switch result {
-                    case .success(let channel):
-                        channel.closeFuture.whenComplete { _ in
-                            print("Connection closed")
-                        }
-                    case .failure(let error):
-                        completion(.failure(error))
-                    }
-                }
-            } else {
-                let bootstrap = ClientBootstrap(group: group)
-                    .channelOption(ChannelOptions.socketOption(.so_reuseaddr), value: 1)
-                    .channelInitializer { channel in
-                        channel.pipeline.addHandler(
-                            GopherRequestResponseHandler(message: message, completion: completion))
-                    }
-                bootstrap.connect(host: host, port: port).whenComplete { result in
-                    switch result {
-                    case .success(let channel):
-                        channel.closeFuture.whenComplete { _ in
-                            print("Connection closed")
-                        }
-                    case .failure(let error):
-                        completion(.failure(error))
-                    }
-                }
-            }
-        #endif
-
+        }
     }
 
+    /// Sends a request to a Gopher server using Swift concurrency.
+    ///
+    /// This method asynchronously establishes a connection and sends the request,
+    /// returning the result as an array of `gopherItem`.
+    ///
+    /// - Parameters:
+    ///   - host: The host address of the Gopher server.
+    ///   - port: The port of the Gopher server. Defaults to 70.
+    ///   - message: The message to be sent to the server.
+    ///
+    /// - Returns: An array of `gopherItem` representing the server's response.
+    ///
+    /// - Throws: An error if the connection fails or the server returns an invalid response.
     @available(iOS 13.0, *)
     @available(macOS 10.15, *)
     public func sendRequest(to host: String, port: Int = 70, message: String) async throws
@@ -129,6 +109,16 @@ public class GopherClient {
         }
     }
 
+    /// Creates a bootstrap for connecting to a Gopher server.
+    ///
+    /// This method sets up the appropriate bootstrap based on the platform and configures
+    /// the channel with a `GopherRequestResponseHandler`.
+    ///
+    /// - Parameters:
+    ///   - message: The message to be sent to the server.
+    ///   - completion: A closure that handles the result of the request.
+    ///
+    /// - Returns: A `NIOClientTCPBootstrapProtocol` configured for Gopher communication.
     private func createBootstrap(
         message: String,
         completion: @escaping (Result<[gopherItem], Error>) -> Void
@@ -136,7 +126,7 @@ public class GopherClient {
         let handler = GopherRequestResponseHandler(message: message, completion: completion)
 
         #if os(Linux)
-            return ClientBootstrap(group: eventLoopGroup)
+            return ClientBootstrap(group: group)
                 .channelOption(ChannelOptions.socketOption(.so_reuseaddr), value: 1)
                 .channelInitializer { channel in
                     channel.pipeline.addHandler(handler)
