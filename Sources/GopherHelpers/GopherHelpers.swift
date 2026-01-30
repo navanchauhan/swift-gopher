@@ -170,6 +170,22 @@ public func getFileType(fileExtension: String) -> gopherItemType {
         return .doc
     case "xml":
         return .doc
+    case "zip":
+        return .binary
+    case "bin":
+        return .binary
+    case "sit":
+        return .binary
+    case "hqx":
+        return .binary
+    case "sea":
+        return .binary
+    case "toast":
+        return .binary
+    case "dsk":
+        return .binary
+    case "ISO":
+        return .binary
     default:
         return .binary
     }
