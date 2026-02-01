@@ -94,7 +94,7 @@ public func getGopherFileType(item: String) -> gopherItemType {
     case "4":
         return .binhex
     case "5":
-        return .bindos
+        return .binary
     case "6":
         return .uuencoded
     case "7":
@@ -204,7 +204,7 @@ public func fileTypeToGopherItem(fileType: gopherItemType) -> String {
     case .binhex:
         return "4"
     case .bindos:
-        return "5"
+        return "9"
     case .uuencoded:
         return "6"
     case .search:
