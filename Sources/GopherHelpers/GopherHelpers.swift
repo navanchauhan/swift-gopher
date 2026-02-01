@@ -4,6 +4,7 @@
 //
 //  Created by Navan Chauhan on 12/16/23.
 //
+//  Updated by Morten Harding on 1. Feb. 2026
 
 import Foundation
 import NIOCore
