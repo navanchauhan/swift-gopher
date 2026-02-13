@@ -60,7 +60,7 @@ final class GopherRequestResponseHandler: ChannelInboundHandler {
             let components = rawLine.components(separatedBy: "\t")
 
             // Handle cases where rawLine does not have any itemType in the first character
-            item.message = String(components[0].dropFirst())
+            item.message = String(components[0])
 
             if components.indices.contains(1) {
                 item.selector = String(components[1])
