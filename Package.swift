@@ -6,7 +6,7 @@ import PackageDescription
 #if os(Windows)
 let packageDependencies: [Package.Dependency] = [
   .package(url: "https://github.com/apple/swift-argument-parser.git", from: "1.2.0"),
-  .package(url: "https://github.com/apple/swift-log.git", from: "1.0.0"),
+  .package(url: "https://github.com/apple/swift-log.git", from: "1.9.1"),
 ]
 let serverDependencies: [Target.Dependency] = [
   .product(name: "ArgumentParser", package: "swift-argument-parser"),
@@ -21,7 +21,7 @@ let clientDependencies: [Target.Dependency] = [
 let packageDependencies: [Package.Dependency] = [
   .package(url: "https://github.com/apple/swift-nio", from: "2.0.0"),
   .package(url: "https://github.com/apple/swift-argument-parser.git", from: "1.2.0"),
-  .package(url: "https://github.com/apple/swift-log.git", from: "1.0.0"),
+  .package(url: "https://github.com/apple/swift-log.git", from: "1.9.1"),
   .package(url: "https://github.com/apple/swift-nio-transport-services.git", from: "1.20.0"),
 ]
 let serverDependencies: [Target.Dependency] = [

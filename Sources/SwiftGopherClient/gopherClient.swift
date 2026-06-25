@@ -115,6 +115,11 @@ public class GopherClient {
         as responseKind: GopherResponseKind = .menu,
         completion: @escaping (Result<GopherClientResponse, Error>) -> Void
     ) {
+        guard (0...Int(UInt16.max)).contains(port) else {
+            completion(.failure(GopherClientError.invalidPort))
+            return
+        }
+
         #if os(Windows)
             DispatchQueue.global(qos: .userInitiated).async {
                 completion(Result {
