@@ -4,14 +4,13 @@ import GopherHelpers
 enum GopherResponseParser {
     static func parse(data: Data) -> [gopherItem] {
         let response = String(data: data, encoding: .utf8) ?? ""
-        let lines = response.split { character in
-            character == "\r" || character == "\n"
-        }
+        let lines = response.split(whereSeparator: \.isNewline)
 
         return lines.map { line in
-            createGopherItem(
-                rawLine: String(line),
-                itemType: getGopherFileType(item: "\(line.first ?? " ")"),
+            let rawLine = String(line).trimmingCharacters(in: .newlines)
+            return createGopherItem(
+                rawLine: rawLine,
+                itemType: getGopherFileType(item: "\(rawLine.first ?? " ")"),
                 rawData: data
             )
         }

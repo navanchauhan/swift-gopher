@@ -7,6 +7,7 @@
 
 import Foundation
 import GopherHelpers
+import Logging
 
 #if !os(Windows)
 import NIO
@@ -18,6 +19,7 @@ final class GopherRequestResponseHandler: ChannelInboundHandler {
     private var accumulatedData: ByteBuffer
     private let message: String
     private let completion: (Result<[gopherItem], Error>) -> Void
+    private let logger = Logger(label: "com.navanchauhan.gopher.client.handler")
 
     init(message: String, completion: @escaping (Result<[gopherItem], Error>) -> Void) {
         self.message = message
@@ -45,7 +47,7 @@ final class GopherRequestResponseHandler: ChannelInboundHandler {
     }
 
     func errorCaught(context: ChannelHandlerContext, error: Error) {
-        print("Error: ", error)
+        logger.info("Error: \(error)")
         context.close(promise: nil)
     }
 

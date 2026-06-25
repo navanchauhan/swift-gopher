@@ -7,6 +7,7 @@
 
 import Foundation
 import GopherHelpers
+import Logging
 
 #if os(Windows)
 import WinSDK
@@ -35,6 +36,8 @@ enum GopherClientError: Error {
 /// The client supports both synchronous (completion handler-based) and asynchronous (Swift concurrency) APIs
 /// for sending requests to Gopher servers.
 public class GopherClient {
+    private let logger = Logger(label: "com.navanchauhan.gopher.client")
+
     #if !os(Windows)
     /// The event loop group used for managing network operations.
     private let group: EventLoopGroup
@@ -93,7 +96,7 @@ public class GopherClient {
             switch result {
             case .success(let channel):
                 channel.closeFuture.whenComplete { _ in
-                    print("Connection closed")
+                    self.logger.info("Connection closed")
                 }
             case .failure(let error):
                 completion(.failure(error))
@@ -135,7 +138,7 @@ public class GopherClient {
                 switch result {
                 case .success(let channel):
                     channel.closeFuture.whenComplete { _ in
-                        print("Connection Closed")
+                        self.logger.info("Connection closed")
                     }
                 case .failure(let error):
                     continuation.resume(throwing: error)
@@ -232,7 +235,7 @@ public class GopherClient {
         do {
             try group.syncShutdownGracefully()
         } catch {
-            print("Error shutting down event loop group: \(error)")
+            logger.info("Error shutting down event loop group: \(error)")
         }
     }
     #endif

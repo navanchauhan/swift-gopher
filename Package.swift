@@ -14,6 +14,7 @@ let serverDependencies: [Target.Dependency] = [
   "GopherHelpers",
 ]
 let clientDependencies: [Target.Dependency] = [
+  .product(name: "Logging", package: "swift-log"),
   "GopherHelpers",
 ]
 #else
@@ -21,7 +22,6 @@ let packageDependencies: [Package.Dependency] = [
   .package(url: "https://github.com/apple/swift-nio", from: "2.0.0"),
   .package(url: "https://github.com/apple/swift-argument-parser.git", from: "1.2.0"),
   .package(url: "https://github.com/apple/swift-log.git", from: "1.0.0"),
-  .package(url: "https://github.com/apple/swift-docc-plugin", from: "1.0.0"),
   .package(url: "https://github.com/apple/swift-nio-transport-services.git", from: "1.20.0"),
 ]
 let serverDependencies: [Target.Dependency] = [
@@ -33,6 +33,7 @@ let serverDependencies: [Target.Dependency] = [
 let clientDependencies: [Target.Dependency] = [
   .product(name: "NIO", package: "swift-nio"),
   .product(name: "NIOTransportServices", package: "swift-nio-transport-services"),
+  .product(name: "Logging", package: "swift-log"),
   "GopherHelpers",
 ]
 #endif
@@ -60,6 +61,12 @@ let package = Package(
       name: "SwiftGopherClientTests",
       dependencies: ["SwiftGopherClient"]
     ),
-    .testTarget(name: "SwiftGopherServerTests", dependencies: ["swift-gopher"])
+    .testTarget(
+      name: "SwiftGopherServerTests",
+      dependencies: [
+        "swift-gopher",
+        .product(name: "Logging", package: "swift-log"),
+      ]
+    )
   ]
 )

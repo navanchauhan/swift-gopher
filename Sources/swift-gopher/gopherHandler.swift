@@ -39,8 +39,6 @@ final class GopherHandler: ChannelInboundHandler {
         var input = self.unwrapInboundIn(data)
         buffer.writeBuffer(&input)
 
-        //    print(buffer.readableBytes)
-
         if let requestString = buffer.getString(at: 0, length: buffer.readableBytes) {
             if requestString.firstIndex(of: "\r\n") != nil
                 || requestString.firstIndex(of: "\n") != nil
@@ -82,14 +80,6 @@ final class GopherHandler: ChannelInboundHandler {
                     processedRequestString = processDeleteCharacter(processedRequestString)  // Could just combine in one statement if asciiCode is changed to asciiCodes: [Int]
                 }
 
-                //        for character in requestString {  // Helpful for debugging
-                //          if let scalar = character.unicodeScalars.first, scalar.value < 128 {
-                //            print("\(character): \(scalar.value)")
-                //          } else {
-                //            print("\(character): Not an ASCII character")
-                //          }
-                //        }
-
                 let response = processGopherRequest(processedRequestString)
                 var outputBuffer: ByteBuffer
                 switch response {
@@ -103,8 +93,6 @@ final class GopherHandler: ChannelInboundHandler {
                     context.close(mode: .all, promise: nil)
                 }
 
-            } else {
-                //print("No CR/LF")
             }
         }
     }
@@ -191,7 +179,7 @@ final class GopherHandler: ChannelInboundHandler {
 
         let fm = FileManager.default
         do {
-            print("Reading directory: \(path.path)")
+            logger.info("Reading directory: \(path.path)")
             let itemsInDirectory = try fm.contentsOfDirectory(
                 at: path, includingPropertiesForKeys: nil)
             for item in itemsInDirectory {
@@ -208,7 +196,7 @@ final class GopherHandler: ChannelInboundHandler {
                 }
             }
         } catch {
-            print("Error reading directory: \(path.path)")
+            logger.info("Error reading directory: \(path.path)")
         }
         return items
     }
@@ -272,7 +260,7 @@ final class GopherHandler: ChannelInboundHandler {
                     }
                 }
             } else {
-                print("No gophermap found for \(path.path)")
+                logger.info("No gophermap found for \(path.path)")
                 gopherResponse = generateGopherMap(path: path)
             }
         } catch {
@@ -377,8 +365,7 @@ final class GopherHandler: ChannelInboundHandler {
     }
 
     func errorCaught(context: ChannelHandlerContext, error: Error) {
-        print("Error: \(error)")
-        logger.error("Error: \(error)")
+        logger.info("Error: \(error)")
         context.close(promise: nil)
     }
 
