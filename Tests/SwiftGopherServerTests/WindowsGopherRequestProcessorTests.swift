@@ -57,7 +57,7 @@ final class WindowsGopherRequestProcessorTests: XCTestCase {
         XCTAssertTrue(menu.contains("0hello.txt\t/hello.txt\texample.test\t7070\r\n"))
         XCTAssertTrue(menu.contains("Iimage.png\t/image.png\texample.test\t7070\r\n"))
         XCTAssertTrue(menu.contains("1folder\t/folder\texample.test\t7070\r\n"))
-        XCTAssertTrue(menu.contains("generated and served by swift-gopher/3.0.1"))
+        XCTAssertTrue(menu.contains("generated and served by swift-gopher/3.0.2"))
     }
 
     func testReadsGophermapWhenEnabled() throws {
@@ -127,7 +127,7 @@ final class WindowsGopherRequestProcessorTests: XCTestCase {
             return XCTFail("Expected string response")
         }
         XCTAssertTrue(body.contains("hello.txt"))
-        XCTAssertTrue(body.contains("generated and served by swift-gopher/3.0.1"))
+        XCTAssertTrue(body.contains("generated and served by swift-gopher/3.0.2"))
     }
 
     func testSanitizesTraversal() {

@@ -1,6 +1,6 @@
 import Foundation
 
-let versionString = "generated and served by swift-gopher/3.0.1"  // TODO: Handle automatic versioning
+let versionString = "generated and served by swift-gopher/3.0.2"  // TODO: Handle automatic versioning
 
 func buildVersionStringResponse() -> String {
     let repeatedString = "i" + String(repeating: "-", count: 72) + "\t\terror.host\t1\r\n"
