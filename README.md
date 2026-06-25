@@ -108,7 +108,7 @@ Although, `swift-gopher` does not currently have a native HTTP handler, you can 
 
 - [x] Add Tests
 - [x] Add CI
-- [ ] Automatic Versioning
+- [x] Automatic Versioning
 - [ ] Verify Compatibility with other Gopher Clients
 - [ ] Support Gemini Protocol
 - [x] Add a client library
