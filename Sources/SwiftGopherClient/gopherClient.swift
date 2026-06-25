@@ -123,17 +123,18 @@ public class GopherClient {
         #if os(Windows)
             completion(Result {
                 let data = try self.sendRawRequestSynchronously(to: host, port: port, message: message)
-                return self.response(from: data, as: responseKind)
+                return Self.response(from: data, as: responseKind)
             })
         #else
         let bootstrap = self.createDataBootstrap(message: message) { result in
-            completion(result.map { self.response(from: $0, as: responseKind) })
+            completion(result.map { Self.response(from: $0, as: responseKind) })
         }
+        let logger = self.logger
         bootstrap.connect(host: host, port: port).whenComplete { result in
             switch result {
             case .success(let channel):
                 channel.closeFuture.whenComplete { _ in
-                    self.logger.info("Connection closed")
+                    logger.info("Connection closed")
                 }
             case .failure(let error):
                 completion(.failure(error))
@@ -220,7 +221,7 @@ public class GopherClient {
         }
     }
 
-    private func response(from data: Data, as responseKind: GopherResponseKind) -> GopherClientResponse {
+    private static func response(from data: Data, as responseKind: GopherResponseKind) -> GopherClientResponse {
         switch responseKind {
         case .menu:
             return .menu(GopherResponseParser.parse(data: data))
