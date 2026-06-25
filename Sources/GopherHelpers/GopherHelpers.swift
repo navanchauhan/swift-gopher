@@ -6,7 +6,6 @@
 //
 
 import Foundation
-import NIOCore
 
 /*
 
@@ -42,7 +41,7 @@ import NIOCore
  X    document xml file "eXtensive Markup Language" )
  */
 
-public enum gopherItemType {
+public enum GopherItemType: Sendable {
     case text
     case directory
     case nameserver
@@ -65,12 +64,12 @@ public enum gopherItemType {
     case info
 }
 
-public struct gopherItem {
+public struct GopherItem: Sendable {
 
     public var rawLine: String
-    public var rawData: ByteBuffer?
+    public var rawData: Data?
     public var message: String = ""
-    public var parsedItemType: gopherItemType = .info
+    public var parsedItemType: GopherItemType = .info
     public var host: String = "error.host"
     public var port: Int = 1
     public var selector: String = ""
@@ -81,7 +80,7 @@ public struct gopherItem {
     }
 }
 
-public func getGopherFileType(item: String) -> gopherItemType {
+public func getGopherFileType(item: String) -> GopherItemType {
     switch item {
     case "0":
         return .text
@@ -138,7 +137,7 @@ public func getGopherFileType(item: String) -> gopherItemType {
     }
 }
 
-public func getFileType(fileExtension: String) -> gopherItemType {
+public func getFileType(fileExtension: String) -> GopherItemType {
     switch fileExtension {
     case "txt":
         return .text
@@ -175,7 +174,7 @@ public func getFileType(fileExtension: String) -> gopherItemType {
     }
 }
 
-public func fileTypeToGopherItem(fileType: gopherItemType) -> String {
+public func fileTypeToGopherItem(fileType: GopherItemType) -> String {
     switch fileType {
     case .text:
         return "0"
@@ -230,7 +229,7 @@ public func fileTypeToGopherItem(fileType: gopherItemType) -> String {
     }
 }
 
-public func itemToImageType(_ item: gopherItem) -> String {
+public func itemToImageType(_ item: GopherItem) -> String {
     switch item.parsedItemType {
     case .text:
         return "doc.plaintext"

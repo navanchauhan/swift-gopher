@@ -5,7 +5,6 @@
 //  Created by Navan Chauhan on 12/12/23.
 //
 
-import NIO
 import XCTest
 
 @testable import SwiftGopherClient
@@ -54,21 +53,20 @@ final class GopherClientTests: XCTestCase {
         }
     }
 
-    func testInvalidHost() {
-        let expectation = XCTestExpectation(description: "Invalid host request")
+    func testInvalidPort() {
+        let expectation = XCTestExpectation(description: "Invalid port request")
 
-        client.sendRequest(to: "invalid.host.example", message: "") { result in
+        client.sendRequest(to: "localhost", port: Int(UInt16.max) + 1, message: "") { result in
             switch result {
             case .success:
-                XCTFail("Request should fail for invalid host")
-            case .failure:
-                // Expected failure
-                break
+                XCTFail("Request should fail for invalid port")
+            case .failure(let error):
+                XCTAssertTrue(error is GopherClientError)
             }
             expectation.fulfill()
         }
 
-        wait(for: [expectation], timeout: 10.0)
+        wait(for: [expectation], timeout: 1.0)
     }
 
     func testCustomPort() {

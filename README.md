@@ -106,22 +106,11 @@ Although, `swift-gopher` does not currently have a native HTTP handler, you can 
 
 ## TODO:
 
-- [ ] Add Tests
-- [ ] Add CI
-- [x] Add more documentation
-- [ ] Automatic Versioning
+- [x] Add Tests
+- [x] Add CI
+- [x] Automatic Versioning
 - [ ] Verify Compatibility with other Gopher Clients
 - [ ] Support Gemini Protocol
 - [x] Add a client library
 - [ ] Add native HTTP handler
 - [ ] Guestbook
-
-## Generating Docs
-
-```bash
-./generate_docs.sh swiftGopherClient swift-gopher GopherHelpers
-```
-
-### Reference Documentation
-
-Reference Documentation is hosted at [https://web.navan.dev/swift-gopher](https://web.navan.dev/swift-gopher)

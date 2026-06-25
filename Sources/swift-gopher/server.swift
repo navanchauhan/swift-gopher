@@ -4,7 +4,10 @@
 import ArgumentParser
 import Foundation
 import Logging
+
+#if !os(Windows)
 import NIO
+#endif
 
 @main
 struct swiftGopher: ParsableCommand {
@@ -22,12 +25,29 @@ struct swiftGopher: ParsableCommand {
     var disableGophermap: Bool = false
 
     public mutating func run() throws {
+        let logger = Logger(label: "com.navanchauhan.gopher.server")
+
+        #if os(Windows)
+        try WindowsGopherServer(
+            host: host,
+            port: port,
+            logger: logger,
+            gopherdataDir: gopherDataDir,
+            gopherdataHost: gopherHostName,
+            enableSearch: !disableSearch,
+            disableGophermap: disableGophermap
+        ).run()
+        #else
         let eventLoopGroup = MultiThreadedEventLoopGroup(
             numberOfThreads: System.coreCount
         )
 
         defer {
-            try! eventLoopGroup.syncShutdownGracefully()
+            do {
+                try eventLoopGroup.syncShutdownGracefully()
+            } catch {
+                logger.info("Error shutting down event loop group: \(error)")
+            }
         }
 
         let localGopherDataDir = gopherDataDir
@@ -35,8 +55,6 @@ struct swiftGopher: ParsableCommand {
         let localPort = port
         let localEnableSearch = !disableSearch
         let localDisableGophermap = disableGophermap
-
-        let logger = Logger(label: "com.navanchauhan.gopher.server")
 
         let serverBootstrap = ServerBootstrap(
             group: eventLoopGroup
@@ -53,7 +71,6 @@ struct swiftGopher: ParsableCommand {
         )
         .childChannelInitializer { channel in
             channel.pipeline.addHandlers([
-                BackPressureHandler(),
                 GopherHandler(
                     logger: logger,
                     gopherdata_dir: localGopherDataDir,
@@ -90,5 +107,6 @@ struct swiftGopher: ParsableCommand {
         logger.info("Server started and listening on \(channel.localAddress!)")
         try channel.closeFuture.wait()
         logger.info("Server closed")
+        #endif
     }
 }

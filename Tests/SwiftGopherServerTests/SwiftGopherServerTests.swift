@@ -6,7 +6,6 @@
 //
 
 import ArgumentParser
-import NIO
 import XCTest
 
 @testable import swift_gopher
