@@ -280,6 +280,14 @@ public class GopherClient {
             }
         #endif
     }
+
+    private func shutdownEventLoopGroup() {
+        do {
+            try group.syncShutdownGracefully()
+        } catch {
+            logger.info("Failed to shutdown event loop group: \(error)")
+        }
+    }
     #endif
 }
 
