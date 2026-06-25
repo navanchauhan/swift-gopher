@@ -71,7 +71,6 @@ struct swiftGopher: ParsableCommand {
         )
         .childChannelInitializer { channel in
             channel.pipeline.addHandlers([
-                BackPressureHandler(),
                 GopherHandler(
                     logger: logger,
                     gopherdata_dir: localGopherDataDir,

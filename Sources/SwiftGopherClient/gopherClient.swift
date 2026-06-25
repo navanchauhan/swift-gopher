@@ -16,7 +16,7 @@ import NIO
 import NIOTransportServices
 #endif
 
-enum GopherClientError: Error {
+enum GopherClientError: Error, Sendable {
     case invalidPort
     case resolveFailed(Int32)
     case socketFailed(Int32)
@@ -26,13 +26,13 @@ enum GopherClientError: Error {
     case invalidResponse
 }
 
-public enum GopherResponseKind {
+public enum GopherResponseKind: Sendable {
     case menu
     case text
     case data
 }
 
-public enum GopherClientResponse {
+public enum GopherClientResponse: Sendable {
     case menu([GopherItem])
     case text(String)
     case data(Data)
@@ -121,12 +121,10 @@ public class GopherClient {
         }
 
         #if os(Windows)
-            DispatchQueue.global(qos: .userInitiated).async {
-                completion(Result {
-                    let data = try self.sendRawRequestSynchronously(to: host, port: port, message: message)
-                    return self.response(from: data, as: responseKind)
-                })
-            }
+            completion(Result {
+                let data = try self.sendRawRequestSynchronously(to: host, port: port, message: message)
+                return self.response(from: data, as: responseKind)
+            })
         #else
         let bootstrap = self.createDataBootstrap(message: message) { result in
             completion(result.map { self.response(from: $0, as: responseKind) })
@@ -179,7 +177,12 @@ public class GopherClient {
     {
         return try await withCheckedThrowingContinuation { continuation in
             sendRequest(to: host, port: port, message: message) { result in
-                continuation.resume(with: result)
+                switch result {
+                case .success(let items):
+                    continuation.resume(returning: items)
+                case .failure(let error):
+                    continuation.resume(throwing: error)
+                }
             }
         }
     }
@@ -193,7 +196,12 @@ public class GopherClient {
     ) async throws -> GopherClientResponse {
         try await withCheckedThrowingContinuation { continuation in
             sendResponse(to: host, port: port, message: message, as: responseKind) { result in
-                continuation.resume(with: result)
+                switch result {
+                case .success(let response):
+                    continuation.resume(returning: response)
+                case .failure(let error):
+                    continuation.resume(throwing: error)
+                }
             }
         }
     }
@@ -202,7 +210,12 @@ public class GopherClient {
     public func sendRawRequest(to host: String, port: Int = 70, message: String) async throws -> Data {
         try await withCheckedThrowingContinuation { continuation in
             sendRawRequest(to: host, port: port, message: message) { result in
-                continuation.resume(with: result)
+                switch result {
+                case .success(let data):
+                    continuation.resume(returning: data)
+                case .failure(let error):
+                    continuation.resume(throwing: error)
+                }
             }
         }
     }

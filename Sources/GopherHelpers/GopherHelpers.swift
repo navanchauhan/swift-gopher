@@ -41,7 +41,7 @@ import Foundation
  X    document xml file "eXtensive Markup Language" )
  */
 
-public enum GopherItemType {
+public enum GopherItemType: Sendable {
     case text
     case directory
     case nameserver
@@ -64,7 +64,7 @@ public enum GopherItemType {
     case info
 }
 
-public struct GopherItem {
+public struct GopherItem: Sendable {
 
     public var rawLine: String
     public var rawData: Data?

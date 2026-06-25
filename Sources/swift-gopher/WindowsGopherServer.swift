@@ -4,7 +4,7 @@ import GopherHelpers
 import Logging
 import WinSDK
 
-final class WindowsGopherServer {
+final class WindowsGopherServer: @unchecked Sendable {
     private let host: String
     private let port: Int
     private let processor: GopherRequestProcessor
