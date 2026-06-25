@@ -2,6 +2,8 @@ import ArgumentParser
 import Foundation
 import GopherHelpers
 import Logging
+
+#if !os(Windows)
 import NIO
 
 final class GopherHandler: ChannelInboundHandler {
@@ -419,3 +421,4 @@ final class GopherHandler: ChannelInboundHandler {
         return requestHandler(path: preparePath(path: request))
     }
 }
+#endif

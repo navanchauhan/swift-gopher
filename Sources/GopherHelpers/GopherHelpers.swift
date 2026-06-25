@@ -6,7 +6,6 @@
 //
 
 import Foundation
-import NIOCore
 
 /*
 
@@ -68,7 +67,7 @@ public enum gopherItemType {
 public struct gopherItem {
 
     public var rawLine: String
-    public var rawData: ByteBuffer?
+    public var rawData: Data?
     public var message: String = ""
     public var parsedItemType: gopherItemType = .info
     public var host: String = "error.host"

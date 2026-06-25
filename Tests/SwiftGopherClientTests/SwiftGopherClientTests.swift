@@ -5,7 +5,6 @@
 //  Created by Navan Chauhan on 12/12/23.
 //
 
-import NIO
 import XCTest
 
 @testable import SwiftGopherClient

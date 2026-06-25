@@ -7,8 +7,23 @@
 
 import Foundation
 import GopherHelpers
+
+#if os(Windows)
+import WinSDK
+#else
 import NIO
 import NIOTransportServices
+#endif
+
+enum GopherClientError: Error {
+    case invalidPort
+    case resolveFailed(Int32)
+    case socketFailed(Int32)
+    case connectFailed(Int32)
+    case sendFailed(Int32)
+    case receiveFailed(Int32)
+    case invalidResponse
+}
 
 /// `GopherClient` is a class for handling network connections and requests to Gopher servers.
 ///
@@ -20,13 +35,18 @@ import NIOTransportServices
 /// The client supports both synchronous (completion handler-based) and asynchronous (Swift concurrency) APIs
 /// for sending requests to Gopher servers.
 public class GopherClient {
+    #if !os(Windows)
     /// The event loop group used for managing network operations.
     private let group: EventLoopGroup
+    #endif
 
     /// Initializes a new instance of `GopherClient`.
     ///
     /// This initializer automatically selects the appropriate `EventLoopGroup` based on the running platform.
     public init() {
+        #if os(Windows)
+            _ = WindowsSockets.initialize()
+        #else
         #if os(Linux)
             self.group = MultiThreadedEventLoopGroup(numberOfThreads: System.coreCount)
         #else
@@ -36,11 +56,14 @@ public class GopherClient {
                 self.group = MultiThreadedEventLoopGroup(numberOfThreads: System.coreCount)
             }
         #endif
+        #endif
     }
 
     /// Cleans up resources when the instance is deinitialized.
     deinit {
+        #if !os(Windows)
         self.shutdownEventLoopGroup()
+        #endif
     }
 
     /// Sends a request to a Gopher server using a completion handler.
@@ -60,6 +83,11 @@ public class GopherClient {
         message: String,
         completion: @escaping (Result<[gopherItem], Error>) -> Void
     ) {
+        #if os(Windows)
+            DispatchQueue.global(qos: .userInitiated).async {
+                completion(Result { try self.sendRequestSynchronously(to: host, port: port, message: message) })
+            }
+        #else
         let bootstrap = self.createBootstrap(message: message, completion: completion)
         bootstrap.connect(host: host, port: port).whenComplete { result in
             switch result {
@@ -71,6 +99,7 @@ public class GopherClient {
                 completion(.failure(error))
             }
         }
+        #endif
     }
 
     /// Sends a request to a Gopher server using Swift concurrency.
@@ -90,6 +119,13 @@ public class GopherClient {
     public func sendRequest(to host: String, port: Int = 70, message: String) async throws
         -> [gopherItem]
     {
+        #if os(Windows)
+            return try await withCheckedThrowingContinuation { continuation in
+                sendRequest(to: host, port: port, message: message) { result in
+                    continuation.resume(with: result)
+                }
+            }
+        #else
         return try await withCheckedThrowingContinuation { continuation in
             let bootstrap = self.createBootstrap(message: message) { result in
                 continuation.resume(with: result)
@@ -106,8 +142,50 @@ public class GopherClient {
                 }
             }
         }
+        #endif
     }
 
+    #if os(Windows)
+    private func sendRequestSynchronously(to host: String, port: Int, message: String) throws
+        -> [gopherItem]
+    {
+        guard (0...Int(UInt16.max)).contains(port) else {
+            throw GopherClientError.invalidPort
+        }
+
+        let socket = try WindowsSockets.connect(host: host, port: port)
+        defer { closesocket(socket) }
+
+        var request = Array(message.utf8)
+        try request.withUnsafeMutableBufferPointer { buffer in
+            var sent = 0
+            while sent < buffer.count {
+                let result = send(socket, buffer.baseAddress! + sent, Int32(buffer.count - sent), 0)
+                if result == SOCKET_ERROR {
+                    throw GopherClientError.sendFailed(WSAGetLastError())
+                }
+                sent += Int(result)
+            }
+        }
+
+        var response = Data()
+        var receiveBuffer = [UInt8](repeating: 0, count: 4096)
+        while true {
+            let received = receiveBuffer.withUnsafeMutableBufferPointer { buffer in
+                recv(socket, buffer.baseAddress!, Int32(buffer.count), 0)
+            }
+            if received == 0 {
+                break
+            }
+            if received == SOCKET_ERROR {
+                throw GopherClientError.receiveFailed(WSAGetLastError())
+            }
+            response.append(receiveBuffer, count: Int(received))
+        }
+
+        return GopherResponseParser.parse(data: response)
+    }
+    #else
     /// Creates a bootstrap for connecting to a Gopher server.
     ///
     /// This method sets up the appropriate bootstrap based on the platform and configures
@@ -157,4 +235,42 @@ public class GopherClient {
             print("Error shutting down event loop group: \(error)")
         }
     }
+    #endif
 }
+
+#if os(Windows)
+enum WindowsSockets {
+    static func initialize() -> Bool {
+        var data = WSADATA()
+        return WSAStartup(0x0202, &data) == 0
+    }
+
+    static func connect(host: String, port: Int) throws -> SOCKET {
+        var hints = addrinfo()
+        hints.ai_family = AF_UNSPEC
+        hints.ai_socktype = SOCK_STREAM
+        hints.ai_protocol = IPPROTO_TCP.rawValue
+
+        var result: UnsafeMutablePointer<addrinfo>?
+        let status = getaddrinfo(host, String(port), &hints, &result)
+        guard status == 0, let first = result else {
+            throw GopherClientError.resolveFailed(status)
+        }
+        defer { freeaddrinfo(first) }
+
+        var current: UnsafeMutablePointer<addrinfo>? = first
+        while let info = current {
+            let socketHandle = socket(info.pointee.ai_family, info.pointee.ai_socktype, info.pointee.ai_protocol)
+            if socketHandle != INVALID_SOCKET {
+                if WinSDK.connect(socketHandle, info.pointee.ai_addr, Int32(info.pointee.ai_addrlen)) == 0 {
+                    return socketHandle
+                }
+                closesocket(socketHandle)
+            }
+            current = info.pointee.ai_next
+        }
+
+        throw GopherClientError.connectFailed(WSAGetLastError())
+    }
+}
+#endif
