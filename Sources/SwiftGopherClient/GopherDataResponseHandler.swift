@@ -9,6 +9,7 @@ final class GopherDataResponseHandler: ChannelInboundHandler {
     typealias OutboundOut = ByteBuffer
 
     private var accumulatedData = ByteBuffer()
+    private var didComplete = false
     private let message: String
     private let completion: (Result<Data, Error>) -> Void
     private let logger = Logger(label: "com.navanchauhan.gopher.client.data-handler")
@@ -30,11 +31,18 @@ final class GopherDataResponseHandler: ChannelInboundHandler {
     }
 
     func channelInactive(context: ChannelHandlerContext) {
+        guard !didComplete else { return }
+        didComplete = true
         var copy = accumulatedData
         completion(.success(Data(copy.readBytes(length: copy.readableBytes) ?? [])))
     }
 
     func errorCaught(context: ChannelHandlerContext, error: Error) {
+        guard !didComplete else {
+            context.close(promise: nil)
+            return
+        }
+        didComplete = true
         logger.info("Error: \(error)")
         completion(.failure(error))
         context.close(promise: nil)
