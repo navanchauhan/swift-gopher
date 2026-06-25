@@ -43,4 +43,24 @@ final class GopherResponseParserTests: XCTestCase {
         XCTAssertEqual(items[0].selector, "")
         XCTAssertNotNil(items[0].rawData)
     }
+
+    func testParsesMediaItemTypes() {
+        let response =
+            "gAnimation\t/animation.gif\tlocalhost\t70\r\n"
+            + "IPhoto\t/photo.png\tlocalhost\t70\r\n"
+            + ":Bitmap\t/bitmap.bmp\tlocalhost\t70\r\n"
+            + ";Video\t/video.mp4\tlocalhost\t70\r\n"
+            + "<Audio\t/audio.mp3\tlocalhost\t70\r\n"
+
+        let items = GopherResponseParser.parse(data: Data(response.utf8))
+
+        XCTAssertEqual(items.map(\.parsedItemType), [.gif, .image, .bitmap, .movie, .sound])
+        XCTAssertEqual(items.map(\.selector), [
+            "/animation.gif",
+            "/photo.png",
+            "/bitmap.bmp",
+            "/video.mp4",
+            "/audio.mp3",
+        ])
+    }
 }

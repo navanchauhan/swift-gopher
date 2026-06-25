@@ -110,9 +110,9 @@ public func getGopherFileType(item: String) -> GopherItemType {
         return .image
     case "T":
         return .tn3270Session
-    case ":":
+    case ":", "b":
         return .bitmap
-    case ";":
+    case ";", "M":
         return .movie
     case "<":
         return .sound
@@ -127,7 +127,7 @@ public func getGopherFileType(item: String) -> GopherItemType {
     case "r":
         return .doc
     case "s":
-        return .doc
+        return .sound
     case "P":
         return .doc
     case "X":
@@ -138,7 +138,7 @@ public func getGopherFileType(item: String) -> GopherItemType {
 }
 
 public func getFileType(fileExtension: String) -> GopherItemType {
-    switch fileExtension {
+    switch fileExtension.lowercased() {
     case "txt":
         return .text
     case "md":
@@ -155,6 +155,8 @@ public func getFileType(fileExtension: String) -> GopherItemType {
         return .image
     case "jpeg":
         return .image
+    case "bmp":
+        return .bitmap
     case "mp3":
         return .sound
     case "wav":
@@ -205,11 +207,11 @@ public func fileTypeToGopherItem(fileType: GopherItemType) -> String {
     case .image:
         return "I"
     case .bitmap:
-        return "b"
+        return ":"
     case .movie:
-        return "M"
+        return ";"
     case .sound:
-        return "s"
+        return "<"
     case .doc:
         return "d"
     case .html:

@@ -18,6 +18,9 @@ final class WindowsGopherRequestProcessorTests: XCTestCase {
             encoding: .utf8
         )
         try Data([0, 1, 2, 3]).write(to: tempDirectory.appendingPathComponent("image.png"))
+        try Data([4, 5, 6, 7]).write(to: tempDirectory.appendingPathComponent("audio-match.mp3"))
+        try Data([8, 9, 10, 11]).write(to: tempDirectory.appendingPathComponent("video-match.mp4"))
+        try Data([12, 13, 14, 15]).write(to: tempDirectory.appendingPathComponent("bitmap-match.bmp"))
         try FileManager.default.createDirectory(
             at: tempDirectory.appendingPathComponent("folder"),
             withIntermediateDirectories: true
@@ -128,6 +131,17 @@ final class WindowsGopherRequestProcessorTests: XCTestCase {
         }
         XCTAssertTrue(body.contains("hello.txt"))
         XCTAssertTrue(body.contains("generated and served by swift-gopher/3.0.2"))
+    }
+
+    func testSearchEnabledResponseUsesMediaItemTypes() {
+        let response = processor(enableSearch: true).process("/search\tmatch\r\n")
+
+        guard case .menu(let body) = response else {
+            return XCTFail("Expected string response")
+        }
+        XCTAssertTrue(body.contains("</audio-match.mp3\t/audio-match.mp3\texample.test\t7070\r\n"), body)
+        XCTAssertTrue(body.contains(";/video-match.mp4\t/video-match.mp4\texample.test\t7070\r\n"), body)
+        XCTAssertTrue(body.contains(":/bitmap-match.bmp\t/bitmap-match.bmp\texample.test\t7070\r\n"), body)
     }
 
     func testSanitizesTraversal() {
