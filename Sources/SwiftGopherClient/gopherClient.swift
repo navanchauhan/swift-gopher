@@ -38,6 +38,28 @@ public enum GopherClientResponse: Sendable {
     case data(Data)
 }
 
+final class SingleResultCompletion<Value>: @unchecked Sendable {
+    private let lock = NSLock()
+    private var didComplete = false
+    private let completion: (Result<Value, Error>) -> Void
+
+    init(_ completion: @escaping (Result<Value, Error>) -> Void) {
+        self.completion = completion
+    }
+
+    func complete(_ result: Result<Value, Error>) {
+        lock.lock()
+        guard !didComplete else {
+            lock.unlock()
+            return
+        }
+        didComplete = true
+        lock.unlock()
+
+        completion(result)
+    }
+}
+
 /// `GopherClient` is a class for handling network connections and requests to Gopher servers.
 ///
 /// This client utilizes Swift NIO for efficient, non-blocking network operations. It automatically
@@ -126,8 +148,12 @@ public class GopherClient {
                 return Self.response(from: data, as: responseKind)
             })
         #else
+        let completionBox = SingleResultCompletion(completion)
+        let rawCompletionBox = SingleResultCompletion<Data> { result in
+            completionBox.complete(result.map { Self.response(from: $0, as: responseKind) })
+        }
         let bootstrap = self.createDataBootstrap(message: message) { result in
-            completion(result.map { Self.response(from: $0, as: responseKind) })
+            rawCompletionBox.complete(result)
         }
         let logger = self.logger
         bootstrap.connect(host: host, port: port).whenComplete { result in
@@ -137,7 +163,7 @@ public class GopherClient {
                     logger.info("Connection closed")
                 }
             case .failure(let error):
-                completion(.failure(error))
+                rawCompletionBox.complete(.failure(error))
             }
         }
         #endif
