@@ -38,7 +38,7 @@ final class GopherHelpersTests: XCTestCase {
     }
 
     func testItemToImageTypeMapping() {
-        var item = gopherItem(rawLine: "0hello")
+        var item = GopherItem(rawLine: "0hello")
         item.parsedItemType = .text
         XCTAssertEqual(itemToImageType(item), "doc.plaintext")
 

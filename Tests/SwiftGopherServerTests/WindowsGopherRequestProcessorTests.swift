@@ -33,7 +33,7 @@ final class WindowsGopherRequestProcessorTests: XCTestCase {
     func testServesTextFile() {
         let response = processor().process("/hello.txt\r\n")
 
-        guard case .string(let body) = response else {
+        guard case .text(let body) = response else {
             return XCTFail("Expected string response")
         }
         XCTAssertEqual(body, "Hello from text")
@@ -51,7 +51,7 @@ final class WindowsGopherRequestProcessorTests: XCTestCase {
     func testGeneratesDirectoryMenuWithoutGophermap() {
         let response = processor().process("\r\n")
 
-        guard case .string(let menu) = response else {
+        guard case .menu(let menu) = response else {
             return XCTFail("Expected menu response")
         }
         XCTAssertTrue(menu.contains("0hello.txt\t/hello.txt\texample.test\t7070\r\n"))
@@ -69,7 +69,7 @@ final class WindowsGopherRequestProcessorTests: XCTestCase {
 
         let response = processor().process("\r\n")
 
-        guard case .string(let menu) = response else {
+        guard case .menu(let menu) = response else {
             return XCTFail("Expected menu response")
         }
         XCTAssertTrue(menu.contains("Welcome"))
@@ -85,7 +85,7 @@ final class WindowsGopherRequestProcessorTests: XCTestCase {
 
         let response = processor(disableGophermap: true).process("\r\n")
 
-        guard case .string(let menu) = response else {
+        guard case .menu(let menu) = response else {
             return XCTFail("Expected menu response")
         }
         XCTAssertFalse(menu.contains("Only in map"))
@@ -95,7 +95,7 @@ final class WindowsGopherRequestProcessorTests: XCTestCase {
     func testReturnsErrorForMissingPath() {
         let response = processor().process("/missing.txt\r\n")
 
-        guard case .string(let body) = response else {
+        guard case .menu(let body) = response else {
             return XCTFail("Expected string response")
         }
         XCTAssertTrue(body.hasPrefix("3Error reading file"))
@@ -104,7 +104,7 @@ final class WindowsGopherRequestProcessorTests: XCTestCase {
     func testUrlRedirectResponse() {
         let response = processor().process("URL:https://example.com\r\n")
 
-        guard case .string(let body) = response else {
+        guard case .text(let body) = response else {
             return XCTFail("Expected string response")
         }
         XCTAssertTrue(body.contains("https://example.com"))
@@ -114,7 +114,7 @@ final class WindowsGopherRequestProcessorTests: XCTestCase {
     func testSearchDisabledResponse() {
         let response = processor(enableSearch: false).process("/search\tHello\r\n")
 
-        guard case .string(let body) = response else {
+        guard case .menu(let body) = response else {
             return XCTFail("Expected string response")
         }
         XCTAssertEqual(body, "3Search is disabled on this server.\r\n")
@@ -123,7 +123,7 @@ final class WindowsGopherRequestProcessorTests: XCTestCase {
     func testSearchEnabledResponse() {
         let response = processor(enableSearch: true).process("/search\thello\r\n")
 
-        guard case .string(let body) = response else {
+        guard case .menu(let body) = response else {
             return XCTFail("Expected string response")
         }
         XCTAssertTrue(body.contains("hello.txt"))
@@ -133,7 +133,7 @@ final class WindowsGopherRequestProcessorTests: XCTestCase {
     func testSanitizesTraversal() {
         let response = processor().process("/../hello.txt\r\n")
 
-        guard case .string(let body) = response else {
+        guard case .text(let body) = response else {
             return XCTFail("Expected string response")
         }
         XCTAssertEqual(body, "Hello from text")

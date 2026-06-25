@@ -43,7 +43,11 @@ struct swiftGopher: ParsableCommand {
         )
 
         defer {
-            try! eventLoopGroup.syncShutdownGracefully()
+            do {
+                try eventLoopGroup.syncShutdownGracefully()
+            } catch {
+                logger.info("Error shutting down event loop group: \(error)")
+            }
         }
 
         let localGopherDataDir = gopherDataDir

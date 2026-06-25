@@ -26,6 +26,18 @@ enum GopherClientError: Error {
     case invalidResponse
 }
 
+public enum GopherResponseKind {
+    case menu
+    case text
+    case data
+}
+
+public enum GopherClientResponse {
+    case menu([GopherItem])
+    case text(String)
+    case data(Data)
+}
+
 /// `GopherClient` is a class for handling network connections and requests to Gopher servers.
 ///
 /// This client utilizes Swift NIO for efficient, non-blocking network operations. It automatically
@@ -79,19 +91,41 @@ public class GopherClient {
     ///   - port: The port of the Gopher server. Defaults to 70.
     ///   - message: The message to be sent to the server.
     ///   - completion: A closure that handles the result of the request. It takes a `Result` type
-    ///     which either contains an array of `gopherItem` on success or an `Error` on failure.
+    ///     which either contains an array of `GopherItem` on success or an `Error` on failure.
     public func sendRequest(
         to host: String,
         port: Int = 70,
         message: String,
-        completion: @escaping (Result<[gopherItem], Error>) -> Void
+        completion: @escaping (Result<[GopherItem], Error>) -> Void
+    ) {
+        sendResponse(to: host, port: port, message: message, as: .menu) { result in
+            completion(result.flatMap { response in
+                guard case .menu(let items) = response else {
+                    return .failure(GopherClientError.invalidResponse)
+                }
+                return .success(items)
+            })
+        }
+    }
+
+    public func sendResponse(
+        to host: String,
+        port: Int = 70,
+        message: String,
+        as responseKind: GopherResponseKind = .menu,
+        completion: @escaping (Result<GopherClientResponse, Error>) -> Void
     ) {
         #if os(Windows)
             DispatchQueue.global(qos: .userInitiated).async {
-                completion(Result { try self.sendRequestSynchronously(to: host, port: port, message: message) })
+                completion(Result {
+                    let data = try self.sendRawRequestSynchronously(to: host, port: port, message: message)
+                    return self.response(from: data, as: responseKind)
+                })
             }
         #else
-        let bootstrap = self.createBootstrap(message: message, completion: completion)
+        let bootstrap = self.createDataBootstrap(message: message) { result in
+            completion(result.map { self.response(from: $0, as: responseKind) })
+        }
         bootstrap.connect(host: host, port: port).whenComplete { result in
             switch result {
             case .success(let channel):
@@ -105,53 +139,82 @@ public class GopherClient {
         #endif
     }
 
+    public func sendRawRequest(
+        to host: String,
+        port: Int = 70,
+        message: String,
+        completion: @escaping (Result<Data, Error>) -> Void
+    ) {
+        sendResponse(to: host, port: port, message: message, as: .data) { result in
+            completion(result.flatMap { response in
+                guard case .data(let data) = response else {
+                    return .failure(GopherClientError.invalidResponse)
+                }
+                return .success(data)
+            })
+        }
+    }
+
     /// Sends a request to a Gopher server using Swift concurrency.
     ///
     /// This method asynchronously establishes a connection and sends the request,
-    /// returning the result as an array of `gopherItem`.
+    /// returning the result as an array of `GopherItem`.
     ///
     /// - Parameters:
     ///   - host: The host address of the Gopher server.
     ///   - port: The port of the Gopher server. Defaults to 70.
     ///   - message: The message to be sent to the server.
     ///
-    /// - Returns: An array of `gopherItem` representing the server's response.
+    /// - Returns: An array of `GopherItem` representing the server's response.
     ///
     /// - Throws: An error if the connection fails or the server returns an invalid response.
     @available(macOS 10.15, iOS 13.0, tvOS 12.0, watchOS 6.0, visionOS 1.0, * )
     public func sendRequest(to host: String, port: Int = 70, message: String) async throws
-        -> [gopherItem]
+        -> [GopherItem]
     {
-        #if os(Windows)
-            return try await withCheckedThrowingContinuation { continuation in
-                sendRequest(to: host, port: port, message: message) { result in
-                    continuation.resume(with: result)
-                }
-            }
-        #else
         return try await withCheckedThrowingContinuation { continuation in
-            let bootstrap = self.createBootstrap(message: message) { result in
+            sendRequest(to: host, port: port, message: message) { result in
                 continuation.resume(with: result)
             }
+        }
+    }
 
-            bootstrap.connect(host: host, port: port).whenComplete { result in
-                switch result {
-                case .success(let channel):
-                    channel.closeFuture.whenComplete { _ in
-                        self.logger.info("Connection closed")
-                    }
-                case .failure(let error):
-                    continuation.resume(throwing: error)
-                }
+    @available(macOS 10.15, iOS 13.0, tvOS 12.0, watchOS 6.0, visionOS 1.0, * )
+    public func sendResponse(
+        to host: String,
+        port: Int = 70,
+        message: String,
+        as responseKind: GopherResponseKind = .menu
+    ) async throws -> GopherClientResponse {
+        try await withCheckedThrowingContinuation { continuation in
+            sendResponse(to: host, port: port, message: message, as: responseKind) { result in
+                continuation.resume(with: result)
             }
         }
-        #endif
+    }
+
+    @available(macOS 10.15, iOS 13.0, tvOS 12.0, watchOS 6.0, visionOS 1.0, * )
+    public func sendRawRequest(to host: String, port: Int = 70, message: String) async throws -> Data {
+        try await withCheckedThrowingContinuation { continuation in
+            sendRawRequest(to: host, port: port, message: message) { result in
+                continuation.resume(with: result)
+            }
+        }
+    }
+
+    private func response(from data: Data, as responseKind: GopherResponseKind) -> GopherClientResponse {
+        switch responseKind {
+        case .menu:
+            return .menu(GopherResponseParser.parse(data: data))
+        case .text:
+            return .text(String(data: data, encoding: .utf8) ?? "")
+        case .data:
+            return .data(data)
+        }
     }
 
     #if os(Windows)
-    private func sendRequestSynchronously(to host: String, port: Int, message: String) throws
-        -> [gopherItem]
-    {
+    private func sendRawRequestSynchronously(to host: String, port: Int, message: String) throws -> Data {
         guard (0...Int(UInt16.max)).contains(port) else {
             throw GopherClientError.invalidPort
         }
@@ -186,24 +249,14 @@ public class GopherClient {
             response.append(receiveBuffer, count: Int(received))
         }
 
-        return GopherResponseParser.parse(data: response)
+        return response
     }
     #else
-    /// Creates a bootstrap for connecting to a Gopher server.
-    ///
-    /// This method sets up the appropriate bootstrap based on the platform and configures
-    /// the channel with a `GopherRequestResponseHandler`.
-    ///
-    /// - Parameters:
-    ///   - message: The message to be sent to the server.
-    ///   - completion: A closure that handles the result of the request.
-    ///
-    /// - Returns: A `NIOClientTCPBootstrapProtocol` configured for Gopher communication.
-    private func createBootstrap(
+    private func createDataBootstrap(
         message: String,
-        completion: @escaping (Result<[gopherItem], Error>) -> Void
+        completion: @escaping (Result<Data, Error>) -> Void
     ) -> NIOClientTCPBootstrapProtocol {
-        let handler = GopherRequestResponseHandler(message: message, completion: completion)
+        let handler = GopherDataResponseHandler(message: message, completion: completion)
 
         #if os(Linux)
             return ClientBootstrap(group: group)
@@ -226,17 +279,6 @@ public class GopherClient {
                     }
             }
         #endif
-    }
-
-    /// Shuts down the event loop group, releasing any resources.
-    ///
-    /// This method is called during deinitialization to ensure clean shutdown of network resources.
-    private func shutdownEventLoopGroup() {
-        do {
-            try group.syncShutdownGracefully()
-        } catch {
-            logger.info("Error shutting down event loop group: \(error)")
-        }
     }
     #endif
 }

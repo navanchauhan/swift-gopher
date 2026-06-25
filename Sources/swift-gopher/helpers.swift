@@ -10,7 +10,17 @@ func buildVersionStringResponse() -> String {
     return "\(repeatedString)\(versionResponseString)"
 }
 
-enum ResponseType {
-    case string(String)
+enum GopherResponse {
+    case menu(String)
+    case text(String)
     case data(Data)
+
+    var data: Data {
+        switch self {
+        case .menu(let string), .text(let string):
+            return Data(string.utf8)
+        case .data(let data):
+            return data
+        }
+    }
 }

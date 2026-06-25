@@ -2,7 +2,7 @@ import Foundation
 import GopherHelpers
 
 enum GopherResponseParser {
-    static func parse(data: Data) -> [gopherItem] {
+    static func parse(data: Data) -> [GopherItem] {
         let response = String(data: data, encoding: .utf8) ?? ""
         let lines = response.split(whereSeparator: \.isNewline)
 
@@ -18,10 +18,10 @@ enum GopherResponseParser {
 
     private static func createGopherItem(
         rawLine: String,
-        itemType: gopherItemType = .info,
+        itemType: GopherItemType = .info,
         rawData: Data
-    ) -> gopherItem {
-        var item = gopherItem(rawLine: rawLine)
+    ) -> GopherItem {
+        var item = GopherItem(rawLine: rawLine)
         item.parsedItemType = itemType
         item.rawData = rawData
 
