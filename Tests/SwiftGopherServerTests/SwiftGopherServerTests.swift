@@ -21,6 +21,9 @@ final class SwiftGopherTests: XCTestCase {
         XCTAssertEqual(gopher.gopherDataDir, "./example-gopherdata")
         XCTAssertFalse(gopher.disableSearch)
         XCTAssertFalse(gopher.disableGophermap)
+        XCTAssertNil(gopher.httpPort)
+        XCTAssertFalse(gopher.httpAllowRemoteHosts)
+        XCTAssertFalse(gopher.httpAllowAllPorts)
     }
 
     func testCustomValues() throws {
@@ -59,4 +62,22 @@ final class SwiftGopherTests: XCTestCase {
         XCTAssertEqual(gopher.gopherDataDir, "/short/path")
     }
 
+    func testHTTPProxyOptions() throws {
+        let gopher = try swiftGopher.parse([
+            "--http-port", "8081",
+            "--http-allow-remote-hosts",
+            "--http-allow-all-ports",
+        ])
+
+        XCTAssertEqual(gopher.httpPort, 8081)
+        XCTAssertTrue(gopher.httpAllowRemoteHosts)
+        XCTAssertTrue(gopher.httpAllowAllPorts)
+    }
+
+    func testHTTPProxyOptionValidation() {
+        XCTAssertThrowsError(try swiftGopher.parse(["--http-port", "8080"]))
+        XCTAssertThrowsError(try swiftGopher.parse(["--http-port", "70000"]))
+        XCTAssertThrowsError(try swiftGopher.parse(["--http-allow-remote-hosts"]))
+        XCTAssertThrowsError(try swiftGopher.parse(["--http-port", "8081", "--http-allow-all-ports"]))
+    }
 }

@@ -1,9 +1,11 @@
 import Foundation
 import GopherHelpers
 
-enum GopherResponseParser {
-    static func parse(data: Data) -> [GopherItem] {
-        let response = String(data: data, encoding: .utf8) ?? ""
+/// Parses raw gopher menu responses into `GopherItem`s.
+public enum GopherResponseParser {
+    public static func parse(data: Data) -> [GopherItem] {
+        // Decode leniently so menus with stray non-UTF-8 bytes still parse.
+        let response = String(decoding: data, as: UTF8.self)
         let lines = response.split(whereSeparator: \.isNewline)
 
         return lines.map { line in

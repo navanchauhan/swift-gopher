@@ -14,10 +14,12 @@ jobs:
   build-test:
     name: Build and test (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
+    # Windows is new to CI; keep it from blocking releases until it has proven stable.
+    continue-on-error: ${{ matrix.os == 'windows-latest' }}
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest]
+        os: [ubuntu-latest, macos-latest, windows-latest]
 
     steps:
       - name: Checkout
@@ -51,7 +53,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: swift-gopher-${{ matrix.os }}
-          path: .build/release/swift-gopher
+          path: .build/release/swift-gopher${{ runner.os == 'Windows' && '.exe' || '' }}
 
   release:
     name: Bump version and tag release
