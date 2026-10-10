@@ -12,6 +12,7 @@ let serverDependencies: [Target.Dependency] = [
   .product(name: "ArgumentParser", package: "swift-argument-parser"),
   .product(name: "Logging", package: "swift-log"),
   "GopherHelpers",
+  "GopherProxy",
 ]
 let clientDependencies: [Target.Dependency] = [
   .product(name: "Logging", package: "swift-log"),
@@ -29,6 +30,7 @@ let serverDependencies: [Target.Dependency] = [
   .product(name: "ArgumentParser", package: "swift-argument-parser"),
   .product(name: "Logging", package: "swift-log"),
   "GopherHelpers",
+  "GopherProxy",
 ]
 let clientDependencies: [Target.Dependency] = [
   .product(name: "NIO", package: "swift-nio"),
@@ -40,6 +42,7 @@ let clientDependencies: [Target.Dependency] = [
 
 let package = Package(
   name: "SwiftGopher",
+  platforms: [.macOS(.v10_15), .iOS(.v13), .tvOS(.v13), .watchOS(.v6)],
   products: [
     .library(name: "SwiftGopherClient", targets: ["SwiftGopherClient"])
   ],
@@ -57,9 +60,21 @@ let package = Package(
       name: "SwiftGopherClient",
       dependencies: clientDependencies
     ),
+    .target(
+      name: "GopherProxy",
+      dependencies: [
+        "GopherHelpers",
+        "SwiftGopherClient",
+        .product(name: "Logging", package: "swift-log"),
+      ]
+    ),
     .testTarget(
       name: "SwiftGopherClientTests",
       dependencies: ["SwiftGopherClient"]
+    ),
+    .testTarget(
+      name: "GopherProxyTests",
+      dependencies: ["GopherProxy"]
     ),
     .testTarget(
       name: "SwiftGopherServerTests",

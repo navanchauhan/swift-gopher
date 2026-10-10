@@ -14,20 +14,31 @@ jobs:
   build-test:
     name: Build and test (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
+    # Windows is new to CI; keep it from blocking releases until it has proven stable.
+    continue-on-error: ${{ matrix.os == 'windows-latest' }}
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest]
+        os: [ubuntu-latest, macos-latest, windows-latest]
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
       - name: Setup Swift
+        if: runner.os != 'Windows'
         uses: swift-actions/setup-swift@v3.0.0-beta.1
         with:
           swift-version: "6.3.2"
           skip-verify-signature: true
+
+      # swift-actions/setup-swift doesn't support Windows yet.
+      - name: Setup Swift (Windows)
+        if: runner.os == 'Windows'
+        uses: compnerd/gha-setup-swift@v0.5.0
+        with:
+          swift-version: swift-6.3.2-release
+          swift-build: 6.3.2-RELEASE
 
       - name: Resolve dependencies
         run: swift package resolve
@@ -51,7 +62,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: swift-gopher-${{ matrix.os }}
-          path: .build/release/swift-gopher
+          path: .build/release/swift-gopher${{ runner.os == 'Windows' && '.exe' || '' }}
 
   release:
     name: Bump version and tag release

@@ -36,7 +36,7 @@ This package also provides GopherHelpers which may be useful while building a cl
 You can interact with my hosted gopher server at [gopher://gopher.navan.dev](gopher://gopher.navan.dev) or [https://gopher.navan.dev](https://gopher.navan.dev)
 
 ```
-USAGE: swift-gopher [--gopher-host-name <gopher-host-name>] [--host <host>] [--port <port>] [--gopher-data-dir <gopher-data-dir>] [--disable-search] [--disable-gophermap]
+USAGE: swift-gopher [--gopher-host-name <gopher-host-name>] [--host <host>] [--port <port>] [--gopher-data-dir <gopher-data-dir>] [--disable-search] [--disable-gophermap] [--http-port <http-port>] [--http-allow-remote-hosts] [--http-allow-all-ports]
 
 OPTIONS:
   -g, --gopher-host-name <gopher-host-name>
@@ -47,6 +47,10 @@ OPTIONS:
                           Data directory to map (default: ./example-gopherdata)
   --disable-search        Disable full-text search feature
   --disable-gophermap     Disable reading gophermap files to override automatic generation
+  --http-port <http-port> Also serve an HTTP proxy for browsing gopher in a web browser on this port
+  --http-allow-remote-hosts
+                          Let the HTTP proxy fetch from other gopher servers, not just this one
+  --http-allow-all-ports  Let the HTTP proxy connect to remote gopher servers on ports other than 70
   -h, --help
 ```
 
@@ -98,9 +102,25 @@ WantedBy=multi-user.target
 
 ## HTTP Proxy
 
-Although, `swift-gopher` does not currently have a native HTTP handler, you can use self host some of the following packages to proxy the Gopher server to HTTP:
+Pass `--http-port` to serve your gopherhole to web browsers as plain, script-free HTML alongside the gopher server:
 
-* [gophper-proxy](https://github.com/muffinista/gophper-proxy) + Caddy is what I use to host the HTTPS version of my Gopher server at [https://gopher.navan.dev](https://gopher.navan.dev)
+```
+swift run swift-gopher --http-port 8081
+# Then open http://localhost:8081
+```
+
+Menus, text files and search (type 7) are rendered as HTML, images are shown inline, and other files are offered as downloads. Proxy URLs mirror `gopher://` URLs, e.g. `http://localhost:8081/localhost:8080/0/hello_world.txt`.
+
+By default the proxy only serves this server's own content, read directly without a network round trip, and links to other gopher servers are left as `gopher://` links. To browse the rest of gopherspace through it:
+
+* `--http-allow-remote-hosts` lets it fetch from other gopher servers on port 70. Responses are cached in memory for 5 minutes, and requests time out after 15 seconds or 16 MB.
+* `--http-allow-all-ports` additionally allows remote servers on other ports.
+
+Remote hosts that resolve to loopback, private, link-local or other reserved addresses are always refused, so the proxy can't be used to reach your internal network. There is no TLS support; put Caddy or another reverse proxy in front of it to serve HTTPS.
+
+Alternatively, you can self host one of these standalone proxies:
+
+* [gophper-proxy](https://github.com/muffinista/gophper-proxy)
 * [gopher-proxy](https://hackage.haskell.org/package/gopher-proxy)
 * [gopherproxy-c](https://git.codemadness.org/gopherproxy-c/)
 
@@ -112,5 +132,5 @@ Although, `swift-gopher` does not currently have a native HTTP handler, you can 
 - [ ] Verify Compatibility with other Gopher Clients
 - [ ] Support Gemini Protocol
 - [x] Add a client library
-- [ ] Add native HTTP handler
+- [x] Add native HTTP handler
 - [ ] Guestbook

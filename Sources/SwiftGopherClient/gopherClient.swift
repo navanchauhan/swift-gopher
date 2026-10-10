@@ -24,6 +24,8 @@ enum GopherClientError: Error, Sendable {
     case sendFailed(Int32)
     case receiveFailed(Int32)
     case invalidResponse
+    case timedOut
+    case responseTooLarge(limit: Int)
 }
 
 public enum GopherResponseKind: Sendable {
@@ -72,6 +74,13 @@ final class SingleResultCompletion<Value>: @unchecked Sendable {
 public class GopherClient {
     private let logger = Logger(label: "com.navanchauhan.gopher.client")
 
+    /// Maximum time a single request may take, from connecting to receiving the last byte.
+    /// `nil` means no limit.
+    public let timeout: TimeInterval?
+
+    /// Maximum number of bytes accepted in a single response. `nil` means no limit.
+    public let maxResponseSize: Int?
+
     #if !os(Windows)
     /// The event loop group used for managing network operations.
     private let group: EventLoopGroup
@@ -80,7 +89,13 @@ public class GopherClient {
     /// Initializes a new instance of `GopherClient`.
     ///
     /// This initializer automatically selects the appropriate `EventLoopGroup` based on the running platform.
-    public init() {
+    ///
+    /// - Parameters:
+    ///   - timeout: Maximum time a request may take before failing. Defaults to no limit.
+    ///   - maxResponseSize: Maximum response size in bytes before failing. Defaults to no limit.
+    public init(timeout: TimeInterval? = nil, maxResponseSize: Int? = nil) {
+        self.timeout = timeout
+        self.maxResponseSize = maxResponseSize
         #if os(Windows)
             _ = WindowsSockets.initialize()
         #else
@@ -152,8 +167,12 @@ public class GopherClient {
         let rawCompletionBox = SingleResultCompletion<Data> { result in
             completionBox.complete(result.map { Self.response(from: $0, as: responseKind) })
         }
-        let bootstrap = self.createDataBootstrap(message: message) { result in
+        var bootstrap = self.createDataBootstrap(message: message) { result in
             rawCompletionBox.complete(result)
+        }
+        if let timeout {
+            // Bounds the connect attempt; the handler bounds the rest of the request.
+            bootstrap = bootstrap.connectTimeout(.nanoseconds(Int64(timeout * 1_000_000_000)))
         }
         let logger = self.logger
         bootstrap.connect(host: host, port: port).whenComplete { result in
@@ -264,8 +283,12 @@ public class GopherClient {
             throw GopherClientError.invalidPort
         }
 
+        let deadline = timeout.map { Date().addingTimeInterval($0) }
         let socket = try WindowsSockets.connect(host: host, port: port)
         defer { closesocket(socket) }
+        if let timeout {
+            WindowsSockets.setTimeout(socket, seconds: timeout)
+        }
 
         var request = Array(message.utf8)
         try request.withUnsafeMutableBufferPointer { buffer in
@@ -289,9 +312,19 @@ public class GopherClient {
                 break
             }
             if received == SOCKET_ERROR {
-                throw GopherClientError.receiveFailed(WSAGetLastError())
+                let error = WSAGetLastError()
+                if error == WSAETIMEDOUT {
+                    throw GopherClientError.timedOut
+                }
+                throw GopherClientError.receiveFailed(error)
             }
             response.append(receiveBuffer, count: Int(received))
+            if let maxResponseSize, response.count > maxResponseSize {
+                throw GopherClientError.responseTooLarge(limit: maxResponseSize)
+            }
+            if let deadline, Date() > deadline {
+                throw GopherClientError.timedOut
+            }
         }
 
         return response
@@ -301,7 +334,12 @@ public class GopherClient {
         message: String,
         completion: @escaping (Result<Data, Error>) -> Void
     ) -> NIOClientTCPBootstrapProtocol {
-        let handler = GopherDataResponseHandler(message: message, completion: completion)
+        let handler = GopherDataResponseHandler(
+            message: message,
+            timeout: timeout,
+            maxResponseSize: maxResponseSize,
+            completion: completion
+        )
 
         #if os(Linux)
             return ClientBootstrap(group: group)
@@ -369,6 +407,21 @@ enum WindowsSockets {
         }
 
         throw GopherClientError.connectFailed(WSAGetLastError())
+    }
+
+    static func setTimeout(_ socket: SOCKET, seconds: TimeInterval) {
+        var milliseconds = DWORD(max(1, min(seconds * 1000, Double(DWORD.max))))
+        for option in [SO_RCVTIMEO, SO_SNDTIMEO] {
+            withUnsafePointer(to: &milliseconds) {
+                _ = setsockopt(
+                    socket,
+                    SOL_SOCKET,
+                    option,
+                    UnsafeRawPointer($0).assumingMemoryBound(to: CChar.self),
+                    Int32(MemoryLayout<DWORD>.size)
+                )
+            }
+        }
     }
 }
 #endif
