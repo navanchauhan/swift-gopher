@@ -40,7 +40,7 @@ public struct GopherHTTPProxy: Sendable {
         self.headMarkup = headMarkup
         // Never allow header injection even when called outside the CLI.
         self.contentSecurityPolicy = contentSecurityPolicy.flatMap {
-            $0.contains("\r") || $0.contains("\n") ? nil : $0
+            $0.utf8.contains(13) || $0.utf8.contains(10) ? nil : $0
         }
         self.logger = logger
     }

@@ -108,8 +108,11 @@ final class GopherProxyTests: XCTestCase {
         XCTAssertFalse(body(response).contains("<script"))
         XCTAssertTrue(body(response).contains("</style>\n</head>"))
         XCTAssertEqual(response.header("Content-Security-Policy"), "default-src 'none'; style-src 'unsafe-inline'; img-src 'self'; form-action 'self'; base-uri 'none'; frame-ancestors 'none'")
-        let invalid = await get(makeProxy(local: FakeFetcher(), contentSecurityPolicy: "x\r\nInjected: yes"), "/bad:0/1/")
-        XCTAssertEqual(invalid.header("Content-Security-Policy"), response.header("Content-Security-Policy"))
+        for separator in ["\r", "\n", "\r\n"] {
+            let invalid = await get(makeProxy(local: FakeFetcher(), contentSecurityPolicy: "x\(separator)Injected: yes"), "/bad:0/1/")
+            XCTAssertEqual(invalid.header("Content-Security-Policy"), response.header("Content-Security-Policy"))
+            XCTAssertFalse(String(decoding: invalid.serialized(), as: UTF8.self).contains("\r\nInjected: yes"))
+        }
     }
 
     func testSerializedCSPWithMarkupAndHeadRequest() async throws {
