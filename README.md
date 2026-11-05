@@ -36,7 +36,7 @@ This package also provides GopherHelpers which may be useful while building a cl
 You can interact with my hosted gopher server at [gopher://gopher.navan.dev](gopher://gopher.navan.dev) or [https://gopher.navan.dev](https://gopher.navan.dev)
 
 ```
-USAGE: swift-gopher [--gopher-host-name <gopher-host-name>] [--host <host>] [--port <port>] [--gopher-data-dir <gopher-data-dir>] [--disable-search] [--disable-gophermap] [--http-port <http-port>] [--http-allow-remote-hosts] [--http-allow-all-ports]
+USAGE: swift-gopher [--gopher-host-name <gopher-host-name>] [--host <host>] [--port <port>] [--gopher-data-dir <gopher-data-dir>] [--disable-search] [--disable-gophermap] [--http-port <http-port>] [--http-allow-remote-hosts] [--http-allow-all-ports] [--http-head-markup <http-head-markup>] [--http-content-security-policy <http-content-security-policy>]
 
 OPTIONS:
   -g, --gopher-host-name <gopher-host-name>
@@ -51,6 +51,10 @@ OPTIONS:
   --http-allow-remote-hosts
                           Let the HTTP proxy fetch from other gopher servers, not just this one
   --http-allow-all-ports  Let the HTTP proxy connect to remote gopher servers on ports other than 70
+  --http-head-markup <http-head-markup>
+                          Trusted HTML to insert into generated HTTP page heads
+  --http-content-security-policy <http-content-security-policy>
+                          Replace the HTTP proxy Content-Security-Policy header
   -h, --help
 ```
 
@@ -102,7 +106,7 @@ WantedBy=multi-user.target
 
 ## HTTP Proxy
 
-Pass `--http-port` to serve your gopherhole to web browsers as plain, script-free HTML alongside the gopher server:
+Pass `--http-port` to serve your gopherhole to web browsers as HTML (script-free by default) alongside the gopher server:
 
 ```
 swift run swift-gopher --http-port 8081
@@ -117,6 +121,30 @@ By default the proxy only serves this server's own content, read directly withou
 * `--http-allow-all-ports` additionally allows remote servers on other ports.
 
 Remote hosts that resolve to loopback, private, link-local or other reserved addresses are always refused, so the proxy can't be used to reach your internal network. There is no TLS support; put Caddy or another reverse proxy in front of it to serve HTTPS.
+
+### Custom HTML head
+
+`--http-head-markup` inserts its value verbatim immediately before `</head>` on every proxy-generated HTML page, including errors. It defaults to unset; no markup or tracking is added. The value is read at startup. For example, load a UTF-8 snippet from a file in a POSIX shell with `--http-head-markup "$(cat head.html)"`. Images and downloads are not HTML pages and are unaffected.
+
+Only supply markup from a trusted administrator. It is not escaped or sanitized: scripts can execute with the proxy site's origin, read page content and send visitor data elsewhere; malformed markup can alter the entire page. Gopher content remains escaped separately. Review third-party scripts and privacy obligations before enabling analytics.
+
+The proxy sends CSP as an HTTP response header, not as a head tag. Its default is `default-src 'none'; style-src 'unsafe-inline'; img-src 'self'; form-action 'self'; base-uri 'none'; frame-ancestors 'none'`. Because it has no `script-src` or `connect-src`, both fall back to `default-src 'none'`: the browser blocks external and inline scripts, and script-initiated connections such as `fetch`, XHR, and `sendBeacon`. Thus inserting a Plausible script alone does not enable it. The policy permits inline styles, restricts images and form submissions to the proxy origin, blocks base URLs and prevents framing. Plain metadata can still be inserted; resource-bearing tags remain subject to their CSP directives.
+
+If needed, `--http-content-security-policy` replaces the **entire** CSP response header; it does not merge directives. Keep the policy as restrictive as your markup permits. For example, after configuring a site in Plausible, put its provided script tag in `head.html`. A representative example (replace the domain and script URL with the values from your Plausible installation) is:
+
+```html
+<script defer data-domain="YOUR-DOMAIN" src="https://plausible.io/js/script.js"></script>
+```
+
+For this example, explicitly allow the script and its reporting endpoint:
+
+```sh
+swift run swift-gopher --http-port 8081 \
+  --http-head-markup "$(cat head.html)" \
+  --http-content-security-policy "default-src 'none'; style-src 'unsafe-inline'; img-src 'self'; form-action 'self'; base-uri 'none'; frame-ancestors 'none'; script-src https://plausible.io; connect-src https://plausible.io"
+```
+
+Adjust the CSP origins for a self-hosted installation and any other trusted resources. CSP is also sent on non-HTML responses. A reverse proxy's additional CSP can further restrict the page. Neither option enables tracking by itself.
 
 Alternatively, you can self host one of these standalone proxies:
 

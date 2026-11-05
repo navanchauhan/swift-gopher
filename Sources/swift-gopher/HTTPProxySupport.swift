@@ -25,7 +25,9 @@ func makeHTTPProxy(
     enableSearch: Bool,
     disableGophermap: Bool,
     allowRemoteHosts: Bool,
-    allowAllPorts: Bool
+    allowAllPorts: Bool,
+    headMarkup: String?,
+    contentSecurityPolicy: String?
 ) -> GopherHTTPProxy {
     let processor = GopherRequestProcessor(
         logger: logger,
@@ -44,6 +46,8 @@ func makeHTTPProxy(
         ),
         local: LocalGopherFetcher(processor: processor),
         remote: RemoteGopherFetcher(),
+        headMarkup: headMarkup,
+        contentSecurityPolicy: contentSecurityPolicy,
         logger: logger
     )
 }

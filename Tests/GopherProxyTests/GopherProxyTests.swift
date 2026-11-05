@@ -46,7 +46,9 @@ final class GopherProxyTests: XCTestCase {
         remote: FakeFetcher = FakeFetcher(),
         allowRemoteHosts: Bool = false,
         allowAllPorts: Bool = false,
-        cache: ResponseCache? = nil
+        cache: ResponseCache? = nil,
+        headMarkup: String? = nil,
+        contentSecurityPolicy: String? = nil
     ) -> GopherHTTPProxy {
         GopherHTTPProxy(
             policy: ProxyPolicy(
@@ -57,7 +59,9 @@ final class GopherProxyTests: XCTestCase {
             ),
             local: local,
             remote: remote,
-            cache: cache
+            cache: cache,
+            headMarkup: headMarkup,
+            contentSecurityPolicy: contentSecurityPolicy
         )
     }
 
@@ -83,6 +87,43 @@ final class GopherProxyTests: XCTestCase {
         XCTAssertTrue(html.contains("<a href=\"telnet://bbs.example:23\">Telnet</a>"))
         XCTAssertFalse(html.contains("javascript:"))
         XCTAssertFalse(html.contains("<script"))
+    }
+
+    func testConfiguredHeadMarkupAndCSPOnGeneratedPages() async {
+        let markup = "<meta name=\"custom\" content=\"a & b\">\n<script defer src=\"https://analytics.example/js/script.js\"></script>"
+        let csp = "default-src 'none'; script-src https://analytics.example; connect-src https://analytics.example"
+        let proxy = makeProxy(local: FakeFetcher(["": menu, "/text": "<unsafe>"]), headMarkup: markup, contentSecurityPolicy: csp)
+        for target in ["/", "/gopher.example:70/0/text", "/gopher.example:70/7/search", "/invalid:0/1/"] {
+            let response = await get(proxy, target)
+            let html = body(response)
+            XCTAssertTrue(html.contains(markup + "\n</head>"), target)
+            XCTAssertEqual(response.header("Content-Security-Policy"), csp)
+        }
+        let textResponse = await get(proxy, "/gopher.example:70/0/text")
+        XCTAssertTrue(body(textResponse).contains("&lt;unsafe&gt;"))
+    }
+
+    func testDefaultHeadAndCSPRemainRestricted() async {
+        let response = await get(makeProxy(local: FakeFetcher(["": menu])), "/")
+        XCTAssertFalse(body(response).contains("<script"))
+        XCTAssertTrue(body(response).contains("</style>\n</head>"))
+        XCTAssertEqual(response.header("Content-Security-Policy"), "default-src 'none'; style-src 'unsafe-inline'; img-src 'self'; form-action 'self'; base-uri 'none'; frame-ancestors 'none'")
+        let invalid = await get(makeProxy(local: FakeFetcher(), contentSecurityPolicy: "x\r\nInjected: yes"), "/bad:0/1/")
+        XCTAssertEqual(invalid.header("Content-Security-Policy"), response.header("Content-Security-Policy"))
+    }
+
+    func testSerializedCSPWithMarkupAndHeadRequest() async throws {
+        let markup = "<script defer src=\"https://analytics.example/js/script.js\"></script>"
+        let proxy = makeProxy(local: FakeFetcher(["": menu]), headMarkup: markup)
+        let expectedCSP = "Content-Security-Policy: default-src 'none'; style-src 'unsafe-inline'; img-src 'self'; form-action 'self'; base-uri 'none'; frame-ancestors 'none'\r\n"
+        let getData = await proxy.respond(to: Data("GET / HTTP/1.1\r\nHost: x\r\n\r\n".utf8))
+        let get = String(decoding: try XCTUnwrap(getData), as: UTF8.self)
+        XCTAssertTrue(get.contains(expectedCSP))
+        XCTAssertTrue(get.contains(markup + "\n</head>"))
+        let headData = await proxy.respond(to: Data("HEAD / HTTP/1.1\r\nHost: x\r\n\r\n".utf8))
+        let head = String(decoding: try XCTUnwrap(headData), as: UTF8.self)
+        XCTAssertTrue(head.contains(expectedCSP))
+        XCTAssertFalse(head.contains(markup))
     }
 
     func testRemoteLinksPointAtGopherURLsWhenRemoteHostsAreDisabled() async {
