@@ -31,6 +31,11 @@ struct swiftGopher: ParsableCommand {
     @Flag(help: "Let the HTTP proxy connect to remote gopher servers on ports other than 70")
     var httpAllowAllPorts: Bool = false
 
+    @Option(help: "Trusted HTML to insert into generated HTTP page heads")
+    var httpHeadMarkup: String?
+    @Option(help: "Replace the HTTP proxy Content-Security-Policy header")
+    var httpContentSecurityPolicy: String?
+
     func validate() throws {
         if let httpPort, !(1...65535).contains(httpPort) {
             throw ValidationError("--http-port must be between 1 and 65535")
@@ -40,6 +45,12 @@ struct swiftGopher: ParsableCommand {
         }
         if httpPort == nil && (httpAllowRemoteHosts || httpAllowAllPorts) {
             throw ValidationError("--http-allow-remote-hosts and --http-allow-all-ports require --http-port")
+        }
+        if httpPort == nil && (httpHeadMarkup != nil || httpContentSecurityPolicy != nil) {
+            throw ValidationError("--http-head-markup and --http-content-security-policy require --http-port")
+        }
+        if let csp = httpContentSecurityPolicy, csp.contains("\r") || csp.contains("\n") {
+            throw ValidationError("--http-content-security-policy must not contain CR or LF")
         }
         if httpAllowAllPorts && !httpAllowRemoteHosts {
             throw ValidationError("--http-allow-all-ports requires --http-allow-remote-hosts")
@@ -55,7 +66,9 @@ struct swiftGopher: ParsableCommand {
             enableSearch: !disableSearch,
             disableGophermap: disableGophermap,
             allowRemoteHosts: httpAllowRemoteHosts,
-            allowAllPorts: httpAllowAllPorts
+            allowAllPorts: httpAllowAllPorts,
+            headMarkup: httpHeadMarkup,
+            contentSecurityPolicy: httpContentSecurityPolicy
         )
     }
 

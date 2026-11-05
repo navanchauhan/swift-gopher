@@ -2,9 +2,10 @@ import Foundation
 import GopherHelpers
 import SwiftGopherClient
 
-/// Renders gopher content as plain, script-free HTML pages.
+/// Renders gopher content as HTML pages.
 struct HTMLRenderer {
     let title: String
+    let headMarkup: String?
     /// Builds the link for a menu item; `nil` when the item isn't linkable.
     let link: (GopherLocation) -> String?
 
@@ -85,6 +86,7 @@ struct HTMLRenderer {
         }
         let headingHTML = heading.map { "<h1>\(Self.escape($0))</h1>\n" } ?? ""
         let pageTitle = heading ?? location.map { $0.gopherURL } ?? title
+        let extraHead = headMarkup.map { "\n" + $0 } ?? ""
 
         return """
             <!DOCTYPE html>
@@ -93,7 +95,7 @@ struct HTMLRenderer {
             <meta charset="utf-8">
             <meta name="viewport" content="width=device-width, initial-scale=1">
             <title>\(Self.escape(pageTitle))</title>
-            <style>\(Self.css)</style>
+            <style>\(Self.css)</style>\(extraHead)
             </head>
             <body>
             <header>\(header)</header>

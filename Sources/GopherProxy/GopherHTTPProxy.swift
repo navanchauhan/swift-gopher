@@ -12,18 +12,24 @@ public struct GopherHTTPProxy: Sendable {
     private let remote: GopherFetching
     private let cache: ResponseCache?
     private let title: String
+    private let headMarkup: String?
+    private let contentSecurityPolicy: String?
     private let logger: Logger
 
     /// - Parameters:
     ///   - local: Fetches from this server, typically without going over the network.
     ///   - remote: Fetches from other servers when the policy allows it.
     ///   - cache: Caches remote responses. Local responses are never cached.
+    ///   - headMarkup: Trusted, unescaped HTML inserted into every generated page head.
+    ///   - contentSecurityPolicy: Optional replacement for the default CSP. Must not contain CR or LF.
     public init(
         policy: ProxyPolicy,
         local: GopherFetching,
         remote: GopherFetching,
         cache: ResponseCache? = ResponseCache(),
         title: String? = nil,
+        headMarkup: String? = nil,
+        contentSecurityPolicy: String? = nil,
         logger: Logger = Logger(label: "com.navanchauhan.gopher.proxy")
     ) {
         self.policy = policy
@@ -31,6 +37,11 @@ public struct GopherHTTPProxy: Sendable {
         self.remote = remote
         self.cache = cache
         self.title = title ?? policy.localHost
+        self.headMarkup = headMarkup
+        // Never allow header injection even when called outside the CLI.
+        self.contentSecurityPolicy = contentSecurityPolicy.flatMap {
+            $0.contains("\r") || $0.contains("\n") ? nil : $0
+        }
         self.logger = logger
     }
 
@@ -109,7 +120,7 @@ public struct GopherHTTPProxy: Sendable {
     }
 
     private var renderer: HTMLRenderer {
-        HTMLRenderer(title: title) { location in
+        HTMLRenderer(title: title, headMarkup: headMarkup) { location in
             policy.permits(host: location.host, port: location.port) ? location.proxyPath : location.gopherURL
         }
     }
@@ -197,8 +208,8 @@ public struct GopherHTTPProxy: Sendable {
         [
             (
                 "Content-Security-Policy",
-                "default-src 'none'; style-src 'unsafe-inline'; img-src 'self'; form-action 'self'; "
-                    + "base-uri 'none'; frame-ancestors 'none'"
+                contentSecurityPolicy ?? ("default-src 'none'; style-src 'unsafe-inline'; img-src 'self'; form-action 'self'; "
+                    + "base-uri 'none'; frame-ancestors 'none'")
             ),
             ("X-Content-Type-Options", "nosniff"),
             ("Referrer-Policy", "no-referrer"),
