@@ -96,7 +96,9 @@ final class SwiftGopherTests: XCTestCase {
     func testHTTPProxyOptionValidation() {
         XCTAssertThrowsError(try swiftGopher.parse(["--http-head-markup", "<meta>"]))
         XCTAssertThrowsError(try swiftGopher.parse(["--http-content-security-policy", "default-src 'none'"]))
-        XCTAssertThrowsError(try swiftGopher.parse(["--http-port", "8081", "--http-content-security-policy", "x\r\nInjected: yes"]))
+        for separator in ["\r", "\n", "\r\n"] {
+            XCTAssertThrowsError(try swiftGopher.parse(["--http-port", "8081", "--http-content-security-policy", "x\(separator)Injected: yes"]))
+        }
         XCTAssertThrowsError(try swiftGopher.parse(["--http-port", "8080"]))
         XCTAssertThrowsError(try swiftGopher.parse(["--http-port", "70000"]))
         XCTAssertThrowsError(try swiftGopher.parse(["--http-allow-remote-hosts"]))

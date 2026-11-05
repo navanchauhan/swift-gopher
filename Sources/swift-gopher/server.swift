@@ -49,7 +49,7 @@ struct swiftGopher: ParsableCommand {
         if httpPort == nil && (httpHeadMarkup != nil || httpContentSecurityPolicy != nil) {
             throw ValidationError("--http-head-markup and --http-content-security-policy require --http-port")
         }
-        if let csp = httpContentSecurityPolicy, csp.contains("\r") || csp.contains("\n") {
+        if let csp = httpContentSecurityPolicy, csp.utf8.contains(13) || csp.utf8.contains(10) {
             throw ValidationError("--http-content-security-policy must not contain CR or LF")
         }
         if httpAllowAllPorts && !httpAllowRemoteHosts {
